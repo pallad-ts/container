@@ -11,6 +11,7 @@ export function deprecated(note: string) {
 
 export type DeprecationMessageFunc = (message: string) => void;
 
+// eslint-disable-next-line no-console
 export function deprecatedMiddleware(messageFunc: DeprecationMessageFunc = console.warn) {
 	return (definition: Definition, next: Function) => {
 		const deprecatedAnnotations = definition.annotations.filter(

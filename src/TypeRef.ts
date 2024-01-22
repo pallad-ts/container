@@ -41,6 +41,7 @@ export class TypeRef {
 	}
 
 	static createFromValue(value: any) {
+		// eslint-disable-next-line no-null/no-null
 		if (isPred.object(value) && value !== null) {
 			const proto = Object.getPrototypeOf(value);
 			if (TypeRef.isAllowedTarget(proto.constructor)) {

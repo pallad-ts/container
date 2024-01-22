@@ -23,6 +23,7 @@ export class ConfigRequestArg<T> extends ContainerArg<T> {
 		return new ConfigRequestArg<T>(...args);
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async getArgument(container: Container): Promise<T> {
 		return getConfigProviderForContainer(container)(this);
 	}

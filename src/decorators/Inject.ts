@@ -12,10 +12,13 @@ const assertServiceNameOrContainerArg = is.assert(
 	"@Inject argument must be a string that represents service name, symbol, function or instance of ContainerArg or TypeRef"
 );
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function Inject(
 	ref: ServiceName | ContainerArg | Function | TypeRef
 ): ParameterDecorator & PropertyDecorator;
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function Inject(): PropertyDecorator;
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function Inject(
 	ref?: ServiceName | ContainerArg | Function | TypeRef
 ): PropertyDecorator | ParameterDecorator {

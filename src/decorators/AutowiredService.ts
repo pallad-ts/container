@@ -6,6 +6,7 @@ import { TypeRef } from "../TypeRef";
 import { ReferenceArg } from "../index";
 import { ERRORS } from "../errors";
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function AutowiredService(name?: ServiceName): ClassDecorator {
 	return (clazz: Function) => {
 		const paramTypes: Function[] = Reflect.getMetadata("design:paramtypes", clazz);

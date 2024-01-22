@@ -9,6 +9,7 @@ export interface ServiceType {
 
 	useContainer(container?: Container): void;
 
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	_container?: Container;
 }
 
@@ -18,6 +19,7 @@ export const Service = function (name?: ServiceName) {
 		if (Service._container) {
 			Service._container.registerDefinition(getDefinitionForClass(constructor));
 		} else if (!process.env.ALPHA_DIC_NO_SERVICE_CONTAINER) {
+			// eslint-disable-next-line no-console
 			console.warn(
 				"There is no container registered in @Service decorator. " +
 					"Use Service.useContainer(container) to define the container. " +

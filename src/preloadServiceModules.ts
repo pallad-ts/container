@@ -7,6 +7,7 @@ export function preloadServiceModules(
 	globPattern: string | string[],
 	globOptions: IOptions = {}
 ) {
+	// eslint-disable-next-line no-console
 	console.warn('"preloadServiceModules" is deprecated. Use "loadServices" instead.');
 	Service.useContainer(container);
 	const patterns = Array.isArray(globPattern) ? globPattern : [globPattern];

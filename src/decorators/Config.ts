@@ -1,6 +1,7 @@
 import { ConfigRequestArg } from "../args/ConfigRequestArg";
 import { ensureMetadata } from "../serviceMetadata";
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function Config<T>(...args: [string, undefined | T] | [string]) {
 	const request = ConfigRequestArg.create(...(args as [string, undefined | T]));
 

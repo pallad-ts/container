@@ -6,7 +6,8 @@
     "outDir": "../compiled",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "composite": true
+    "composite": true,
+    "skipLibCheck": true
   },
   "include": [
     "**/*"
