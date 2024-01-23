@@ -7,13 +7,12 @@ import {
 	onMiddlewareAttach,
 } from "./types";
 import { Definition } from "./Definition";
-import * as errors from "./errors";
 import { assertNoCircularDependencies } from "./assertNoCircularDependencies";
 import { ContainerArg } from "./args/ContainerArg";
 import * as is from "predicates";
-import { randomName } from "./randomName";
 import { debugFn } from "./debugFn";
 import { ERRORS } from "./errors";
+import { randomName } from "./utils/randomName";
 
 const debugCreation = debugFn("creation");
 const debugDefinition = debugFn("definition");
@@ -60,6 +59,12 @@ export class Container {
 		const definition = new Definition(name);
 		this.registerDefinition(definition);
 		return definition;
+	}
+
+	loadFromIterable(iterable: Iterable<Definition | {new (...args: any[]): any}) {
+		for (const definitionOrClass of iterable) {
+			if (Definition.i
+		}
 	}
 
 	/**
@@ -117,40 +122,40 @@ export class Container {
 	/**
 	 * Returns definition by given name
 	 */
-	findByName(name: ServiceName): Definition | undefined {
+	findDefinitionByName(name: ServiceName): Definition | undefined {
 		if (this.definitions.has(name)) {
 			return this.definitions.get(name);
 		}
 
 		if (this.parent) {
-			return this.parent.findByName(name);
+			return this.parent.findDefinitionByName(name);
 		}
 	}
 
 	/**
 	 * Returns definitions that satisfy given predicate
 	 */
-	findByPredicate(predicate: DefinitionPredicate): Definition[] {
+	findDefinitionByPredicate(predicate: DefinitionPredicate): Definition[] {
 		return Array.from(this.definitions.values())
 			.filter(predicate)
-			.concat(this.parent ? this.parent.findByPredicate(predicate) : []);
+			.concat(this.parent ? this.parent.findDefinitionByPredicate(predicate) : []);
 	}
 
 	/**
 	 * Returns all definitions that contain annotation that satisfied given predicate
 	 */
-	findByAnnotation(predicate: AnnotationPredicate): Definition[];
-	findByAnnotation(predicate: AnnotationPredicate, withAnnotation: false): Definition[];
-	findByAnnotation(
+	findDefinitionByAnnotation(predicate: AnnotationPredicate): Definition[];
+	findDefinitionByAnnotation(predicate: AnnotationPredicate, withAnnotation: false): Definition[];
+	findDefinitionByAnnotation(
 		predicate: AnnotationPredicate,
 		withAnnotation: true
 	): Array<[Definition, any]>;
-	findByAnnotation(
+	findDefinitionByAnnotation(
 		predicate: AnnotationPredicate,
 		withAnnotation: boolean = false
 	): Definition[] | Array<[Definition, any]> {
 		let annotations: any[] = [];
-		const definitions = this.findByPredicate(s => {
+		const definitions = this.findDefinitionByPredicate(s => {
 			const annotation = s.annotations.find(predicate);
 
 			if (annotation) {
@@ -181,18 +186,14 @@ export class Container {
 		return this;
 	}
 
-	getMiddlewares(): Middleware[] {
-		return this.middlewares;
-	}
-
 	/**
 	 * Returns service for given name or definition
 	 */
-	get<T = any>(nameOrDefinition: ServiceName | Definition): Promise<T> {
+	resolve<T>(nameOrDefinition: ServiceName | Definition): Promise<T> {
 		let definition: Definition | undefined;
 
 		if (ServiceName.is(nameOrDefinition)) {
-			definition = this.findByName(nameOrDefinition);
+			definition = this.findDefinitionByName(nameOrDefinition);
 			if (definition === undefined) {
 				return Promise.reject(ERRORS.SERVICE_NOT_FOUND.create(nameOrDefinition.toString()));
 			}
@@ -205,7 +206,7 @@ export class Container {
 		}
 
 		if (!this.definitions.has(definition.name) && this.parent) {
-			return this.parent.get(definition);
+			return this.parent.resolve(definition);
 		}
 
 		const promise = this.create(definition);
@@ -239,7 +240,7 @@ export class Container {
 		const debugMsg = `Creating service ${definition.name.toString()}`;
 		debugCreation(`${debugMsg} - started`);
 		let currentMiddleware = 0;
-		const middlewares = this.getMiddlewares();
+		const middlewares = this.middlewares.slice();
 		const next = (definition: Definition) => {
 			const middleware = middlewares[currentMiddleware];
 			currentMiddleware++;
@@ -266,30 +267,35 @@ export class Container {
 	/**
 	 * Returns all services that definition satisfies predicate
 	 */
-	getByPredicate<T = any>(predicate: DefinitionPredicate): Promise<T[]> {
-		return Promise.all(this.findByPredicate(predicate).map(d => this.get(d)));
+	resolveByPredicate<T>(predicate: DefinitionPredicate): Promise<T[]> {
+		return Promise.all(this.findDefinitionByPredicate(predicate).map(d => this.resolve<T>(d)));
 	}
 
 	/**
-	 * Returns all services that definition contains annotation that satisfies given predicate
+	 * Returns all services that definition contains annotation satisfied by given predicate
 	 */
-	getByAnnotation<T = any>(predicate: AnnotationPredicate): Promise<T[]>;
-	getByAnnotation<T = any>(predicate: AnnotationPredicate, withAnnotation: false): Promise<T[]>;
-	getByAnnotation<T = any, TAnnotation = any>(
+	resolveByAnnotation<T = any>(predicate: AnnotationPredicate): Promise<T[]>;
+	resolveByAnnotation<T = any>(
+		predicate: AnnotationPredicate,
+		withAnnotation: false
+	): Promise<T[]>;
+	resolveByAnnotation<T = any, TAnnotation = any>(
 		predicate: AnnotationPredicate,
 		withAnnotation: true
 	): Promise<Array<[T, TAnnotation]>>;
-	getByAnnotation<T = any, TAnnotation = any>(
+	resolveByAnnotation<T = any, TAnnotation = any>(
 		predicate: AnnotationPredicate,
 		withAnnotation: boolean = false
 	): Promise<T[] | Array<[T, TAnnotation]>> {
 		return Promise.all(
-			this.findByAnnotation(predicate, true).map(async ([definition, annotation]) => {
-				if (withAnnotation) {
-					return [await this.get(definition), annotation] as const;
+			this.findDefinitionByAnnotation(predicate, true).map(
+				async ([definition, annotation]) => {
+					if (withAnnotation) {
+						return [await this.resolve(definition), annotation] as const;
+					}
+					return this.resolve(definition);
 				}
-				return this.get(definition);
-			})
+			)
 		) as Promise<T[] | Array<[T, TAnnotation]>>;
 	}
 

@@ -18,24 +18,20 @@ export interface ClassServiceMetadata {
 }
 
 /**
- * Creates service metadata data for given class if it doesn't exist. Otherwise returns current service metadata.
+ * Creates service metadata data for given class if it doesn't exist
  */
-export function ensureMetadata(target: Function): ClassServiceMetadata {
-	let data: ClassServiceMetadata = getMetadata(target);
+export function ensureMetadataAttachedToClass(clazz: Function): ClassServiceMetadata {
+	let data: ClassServiceMetadata = Reflect.getMetadata(KEY, clazz);
 	if (!data) {
 		data = {
-			clazz: target,
+			clazz: clazz,
 			propertiesInjectors: new Map(),
 			constructorArguments: [],
 			annotations: [],
 		};
-		Reflect.defineMetadata(KEY, data, target);
+		Reflect.defineMetadata(KEY, data, clazz);
 	}
 	return data;
-}
-
-export function getMetadata(target: any) {
-	return Reflect.getMetadata(KEY, target);
 }
 
 export function createDefinitionFromMetadata(

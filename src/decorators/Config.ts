@@ -1,5 +1,5 @@
 import { ConfigRequestArg } from "../args/ConfigRequestArg";
-import { ensureMetadata } from "../serviceMetadata";
+import { ensureMetadataAttachedToClass } from "../classServiceMetadata";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export function Config<T>(...args: [string, undefined | T] | [string]) {
@@ -12,9 +12,14 @@ export function Config<T>(...args: [string, undefined | T] | [string]) {
 	) {
 		const isParameterDecorator = typeof indexOrDescriptor === "number";
 		if (isParameterDecorator) {
-			ensureMetadata(target).constructorArguments[indexOrDescriptor as number] = request;
+			ensureMetadataAttachedToClass(target).constructorArguments[
+				indexOrDescriptor as number
+			] = request;
 		} else if (property) {
-			ensureMetadata(target.constructor).propertiesInjectors.set(property, request);
+			ensureMetadataAttachedToClass(target.constructor).propertiesInjectors.set(
+				property,
+				request
+			);
 		}
 	};
 }

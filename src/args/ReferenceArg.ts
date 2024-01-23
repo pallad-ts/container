@@ -50,9 +50,9 @@ export class ReferenceArg extends ContainerArg {
 	getArgument(container: Container): Promise<any> {
 		const definitions = this.findDefinitions(container);
 		if (Array.isArray(definitions)) {
-			return Promise.all(this.findMulti(container).map(d => container.get(d)));
+			return Promise.all(this.findMulti(container).map(d => container.resolve(d)));
 		}
-		return container.get(definitions);
+		return container.resolve(definitions);
 	}
 
 	getDependentServices(container: Container) {

@@ -18,7 +18,7 @@ export namespace Lookup {
 		}
 
 		find(container: Container): Definition | Definition[] {
-			const result = container.findByName(this.name);
+			const result = container.findDefinitionByName(this.name);
 			return result ? result : [];
 		}
 
@@ -34,7 +34,7 @@ export namespace Lookup {
 		}
 
 		find(container: Container) {
-			return container.findByAnnotation(this.predicate);
+			return container.findDefinitionByAnnotation(this.predicate);
 		}
 
 		toString() {
@@ -49,7 +49,7 @@ export namespace Lookup {
 		}
 
 		find(container: Container) {
-			return container.findByPredicate(this.predicate);
+			return container.findDefinitionByPredicate(this.predicate);
 		}
 
 		toString() {
@@ -64,7 +64,7 @@ export namespace Lookup {
 		}
 
 		find(container: Container) {
-			return container.findByPredicate(this.type.predicate);
+			return container.findDefinitionByPredicate(this.type.predicate);
 		}
 
 		toString() {

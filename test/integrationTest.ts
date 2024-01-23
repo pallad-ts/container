@@ -47,7 +47,7 @@ describe("integration", () => {
 		}
 
 		container.registerDefinition(getDefinitionForClass(Foo));
-		const service = await container.get(getDefinitionForClass(Foo).name);
+		const service = await container.resolve(getDefinitionForClass(Foo).name);
 
 		expect(service.mongo).toEqual(CONFIG.database);
 
@@ -72,7 +72,7 @@ describe("integration", () => {
 			)
 			.withArgs(config("redis"), reference("extraService"), config("requiresAuth", false));
 
-		const service = await container.get("Foo");
+		const service = await container.resolve("Foo");
 
 		expect(service.redis).toEqual(CONFIG.redis);
 

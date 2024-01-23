@@ -1,11 +1,10 @@
 import { ServiceFactory, ServiceName } from "./types";
 import * as factories from "./serviceFactories";
-import { randomName } from "./randomName";
 import { TypeRef } from "./TypeRef";
 import { Container } from "./Container";
-import * as errors from "./errors";
 import * as is from "predicates";
 import { ERRORS } from "./errors";
+import { randomName } from "./utils/randomName";
 
 export interface DefinitionData {
 	name: ServiceName;
@@ -136,7 +135,7 @@ export class Definition implements DefinitionData {
 			if (!this.owner) {
 				throw ERRORS.DEFINITION_WITHOUT_CONTAINER.create(def.name.toString());
 			}
-			return this.owner.get(this);
+			return this.owner.resolve(this);
 		});
 
 		const annotations = (() => {

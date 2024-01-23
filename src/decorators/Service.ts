@@ -1,35 +1,35 @@
-import { Container } from "../Container";
-
 import "reflect-metadata";
 import { ServiceName } from "../types";
-import { getDefinitionForClass, ServiceNoAutoRegister } from "./ServiceNoAutoRegister";
-
-export interface ServiceType {
-	(name?: ServiceName): ClassDecorator;
-
-	useContainer(container?: Container): void;
-
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	_container?: Container;
-}
+import { randomName } from "../randomName";
+import { ensureMetadataAttachedToClass } from "../classServiceMetadata";
+import * as is from "predicates";
+import { TypeRef } from "../TypeRef";
+import { ERRORS } from "../errors";
+import { ReferenceArg } from "../args/ReferenceArg";
 
 export const Service = function (name?: ServiceName) {
 	return function (constructor: { new (...args: any[]): any }) {
-		ServiceNoAutoRegister(name)(constructor);
-		if (Service._container) {
-			Service._container.registerDefinition(getDefinitionForClass(constructor));
-		} else if (!process.env.ALPHA_DIC_NO_SERVICE_CONTAINER) {
-			// eslint-disable-next-line no-console
-			console.warn(
-				"There is no container registered in @Service decorator. " +
-					"Use Service.useContainer(container) to define the container. " +
-					"Without it service definitions created via @Service decorator cannot be registered automatically. " +
-					"If you wish to register service definitions manually via getDefinitionForClass set ALPHA_DIC_NO_SERVICE_CONTAINER environment variable to disable this warning."
-			);
+		const finalName = name || randomName(constructor.name);
+
+		const metadata = ensureMetadataAttachedToClass(constructor);
+		metadata.name = finalName;
+		const paramTypes: Function[] = Reflect.getMetadata("design:paramtypes", constructor);
+
+		if (is.array(paramTypes) && constructor.length > 0) {
+			for (const [index, paramType] of paramTypes.entries()) {
+				if (metadata.constructorArguments[index]) {
+					continue;
+				}
+				const ref = TypeRef.createFromType(paramType);
+				if (ref === undefined) {
+					throw ERRORS.AUTO_WIRING_FAILED.create(
+						`constructor (of ${constructor.name}) argument nr: ${index}`
+					);
+				}
+				metadata.constructorArguments[index] = ReferenceArg.one.type(ref);
+			}
+		} else if (constructor.length > 0) {
+			throw ERRORS.AUTO_WIRING_NO_METADATA.create();
 		}
 	};
-} as ServiceType;
-
-Service.useContainer = function (container: Container) {
-	Service._container = container;
 };

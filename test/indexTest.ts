@@ -2,7 +2,7 @@ import {
 	config,
 	Container,
 	create,
-	createStandard,
+	createContainer,
 	Definition,
 	deprecated,
 	onActivation,
@@ -17,7 +17,7 @@ describe("index", () => {
 			const SERVICE = { a: "service" };
 			const deprecationMessageFunc = sinon.spy();
 
-			const container = createStandard({
+			const container = createContainer({
 				config: CONFIG,
 				deprecationMessageFunc: deprecationMessageFunc,
 			});
@@ -33,7 +33,7 @@ describe("index", () => {
 
 			container.registerDefinition(definition);
 
-			const service = await container.get(definition.name);
+			const service = await container.resolve(definition.name);
 
 			expect(service).toEqual(SERVICE);
 			sinon.assert.calledWith(factory, CONFIG.some);

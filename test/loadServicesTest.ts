@@ -17,11 +17,11 @@ describe("loadServices", () => {
 			});
 		});
 
-		expect(container.findByName("NestedExample")).toBeDefined();
-		expect(container.findByName("Example")).toBeDefined();
-		expect(container.findByName("Example2")).toBeDefined();
-		expect(container.findByName("JSExample")).toBeDefined();
-		expect(container.findByName("TSXExample")).toBeDefined();
+		expect(container.findDefinitionByName("NestedExample")).toBeDefined();
+		expect(container.findDefinitionByName("Example")).toBeDefined();
+		expect(container.findDefinitionByName("Example2")).toBeDefined();
+		expect(container.findDefinitionByName("JSExample")).toBeDefined();
+		expect(container.findDefinitionByName("TSXExample")).toBeDefined();
 	});
 
 	it("pattern", () => {
@@ -33,11 +33,11 @@ describe("loadServices", () => {
 			});
 		});
 
-		expect(container.findByName("NestedExample")).not.toBeDefined();
-		expect(container.findByName("Example")).toBeDefined();
-		expect(container.findByName("Example2")).not.toBeDefined();
-		expect(container.findByName("JSExample")).not.toBeDefined();
-		expect(container.findByName("TSXExample")).not.toBeDefined();
+		expect(container.findDefinitionByName("NestedExample")).not.toBeDefined();
+		expect(container.findDefinitionByName("Example")).toBeDefined();
+		expect(container.findDefinitionByName("Example2")).not.toBeDefined();
+		expect(container.findDefinitionByName("JSExample")).not.toBeDefined();
+		expect(container.findDefinitionByName("TSXExample")).not.toBeDefined();
 	});
 
 	it("with extension filter", () => {
@@ -49,10 +49,10 @@ describe("loadServices", () => {
 			});
 		});
 
-		expect(container.findByName("NestedExample")).not.toBeDefined();
-		expect(container.findByName("Example")).not.toBeDefined();
-		expect(container.findByName("Example2")).not.toBeDefined();
-		expect(container.findByName("JSExample")).not.toBeDefined();
-		expect(container.findByName("TSXExample")).toBeDefined();
+		expect(container.findDefinitionByName("NestedExample")).not.toBeDefined();
+		expect(container.findDefinitionByName("Example")).not.toBeDefined();
+		expect(container.findDefinitionByName("Example2")).not.toBeDefined();
+		expect(container.findDefinitionByName("JSExample")).not.toBeDefined();
+		expect(container.findDefinitionByName("TSXExample")).toBeDefined();
 	});
 });

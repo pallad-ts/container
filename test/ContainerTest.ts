@@ -42,7 +42,7 @@ describe("Container", () => {
 		it("registering definition", () => {
 			const def = new Definition(NAME);
 			container.registerDefinition(def);
-			expect(container.findByName(NAME)).toEqual(def);
+			expect(container.findDefinitionByName(NAME)).toEqual(def);
 		});
 
 		it("register definition with the same name", () => {
@@ -56,7 +56,7 @@ describe("Container", () => {
 
 		it("creating with registration", () => {
 			const def = container.definition(NAME);
-			expect(container.findByName(NAME)).toEqual(def);
+			expect(container.findDefinitionByName(NAME)).toEqual(def);
 		});
 
 		it("(as constructor) with registration", () => {
@@ -70,7 +70,7 @@ describe("Container", () => {
 
 			const definition = container.definitionWithConstructor(NAME, Test);
 
-			expect(container.findByName(NAME)).toEqual(definition);
+			expect(container.findDefinitionByName(NAME)).toEqual(definition);
 			expect(definition.factory(1, 2)).toEqual(new Test(1, 2));
 		});
 
@@ -94,7 +94,7 @@ describe("Container", () => {
 			const factory = sinon.stub().returns(factoryResult);
 
 			const definition = container.definitionWithFactory(NAME, factory);
-			expect(container.findByName(NAME)).toStrictEqual(definition);
+			expect(container.findDefinitionByName(NAME)).toStrictEqual(definition);
 
 			expect(definition.factory(1, 2, 3)).toEqual(factoryResult);
 
@@ -108,7 +108,7 @@ describe("Container", () => {
 			const factory = sinon.stub().returns(factoryResult);
 
 			const definition = container.definitionWithFactory(factory, Foo);
-			expect(container.findByName(definition.name)).toEqual(definition);
+			expect(container.findDefinitionByName(definition.name)).toEqual(definition);
 
 			expect(definition.type).toEqual(TypeRef.createFromType(Foo));
 
@@ -119,7 +119,7 @@ describe("Container", () => {
 		it("creating (as value) with registration with global type", () => {
 			const val = { foo: "bar" };
 			const definition = container.definitionWithValue(NAME, val);
-			expect(container.findByName(NAME)).toStrictEqual(definition);
+			expect(container.findDefinitionByName(NAME)).toStrictEqual(definition);
 
 			expect(definition.factory()).toStrictEqual(val);
 
@@ -132,7 +132,7 @@ describe("Container", () => {
 			const val = new Foo();
 
 			const definition = container.definitionWithValue(NAME, val);
-			expect(container.findByName(NAME)).toStrictEqual(definition);
+			expect(container.findDefinitionByName(NAME)).toStrictEqual(definition);
 
 			expect(definition.factory()).toStrictEqual(val);
 
@@ -144,7 +144,7 @@ describe("Container", () => {
 
 			const val = new Foo();
 			const definition = container.definitionWithValue(val);
-			expect(container.findByName(definition.name)).toStrictEqual(definition);
+			expect(container.findDefinitionByName(definition.name)).toStrictEqual(definition);
 
 			expect(definition.name).toMatch(/^Foo.*/);
 
@@ -156,29 +156,29 @@ describe("Container", () => {
 
 	describe("finding", () => {
 		it("by name", () => {
-			expect(container.findByName("A")).toEqual(definitionA);
+			expect(container.findDefinitionByName("A")).toEqual(definitionA);
 		});
 
 		it("by predicate", () => {
-			expect(container.findByPredicate(d => d.name === "B")).toEqual([definitionB]);
+			expect(container.findDefinitionByPredicate(d => d.name === "B")).toEqual([definitionB]);
 		});
 
 		describe("by annotation", () => {
 			it("by some predicate", () => {
-				expect(container.findByAnnotation(a => a.name === ANNOTATION.name)).toEqual([
+				expect(container.findDefinitionByAnnotation(a => a.name === ANNOTATION.name)).toEqual([
 					definitionA,
 				]);
 			});
 
 			it("with annotation", () => {
-				expect(container.findByAnnotation(() => true, true)).toEqual([
+				expect(container.findDefinitionByAnnotation(() => true, true)).toEqual([
 					[definitionA, ANNOTATION],
 					[definitionB, ANNOTATION2],
 				]);
 			});
 
 			it("without annotation", () => {
-				expect(container.findByAnnotation(() => true, false)).toEqual([
+				expect(container.findDefinitionByAnnotation(() => true, false)).toEqual([
 					definitionA,
 					definitionB,
 				]);
@@ -188,30 +188,30 @@ describe("Container", () => {
 
 	describe("getting instances", () => {
 		it("by name", () => {
-			return expect(container.get("A")).resolves.toEqual(serviceA);
+			return expect(container.resolve("A")).resolves.toEqual(serviceA);
 		});
 
 		it("by predicate", () => {
-			return expect(container.getByPredicate(d => d.name === "B")).resolves.toEqual([
+			return expect(container.resolveByPredicate(d => d.name === "B")).resolves.toEqual([
 				serviceB,
 			]);
 		});
 
 		it("by annotation", () => {
 			return expect(
-				container.getByAnnotation(a => a.name === ANNOTATION.name)
+				container.resolveByAnnotation(a => a.name === ANNOTATION.name)
 			).resolves.toEqual([serviceA]);
 		});
 
 		it("by annotation with annotation", () => {
-			return expect(container.getByAnnotation(() => true, true)).resolves.toEqual([
+			return expect(container.resolveByAnnotation(() => true, true)).resolves.toEqual([
 				[serviceA, ANNOTATION],
 				[serviceB, ANNOTATION2],
 			]);
 		});
 
 		it("by annotation without annotation", async () => {
-			return expect(container.getByAnnotation(() => true, false)).resolves.toEqual([
+			return expect(container.resolveByAnnotation(() => true, false)).resolves.toEqual([
 				serviceA,
 				serviceB,
 			]);
@@ -225,8 +225,8 @@ describe("Container", () => {
 
 			container.definition("C").useFactory(stub);
 
-			const p1 = container.get("C");
-			const p2 = container.get("C");
+			const p1 = container.resolve("C");
+			const p2 = container.resolve("C");
 
 			expect(p1).toEqual(p2);
 
@@ -247,7 +247,7 @@ describe("Container", () => {
 				.useFactory(stub)
 				.withArgs(...args);
 
-			expect(await container.get("C")).toEqual(result);
+			expect(await container.resolve("C")).toEqual(result);
 
 			sinon.assert.calledWithExactly(stub, ...args);
 		});
@@ -273,34 +273,34 @@ describe("Container", () => {
 
 			container.definition("C").useFactory(stub).withArgs(1, 2, arg, 4);
 
-			expect(await container.get("C")).toEqual(result);
+			expect(await container.resolve("C")).toEqual(result);
 			sinon.assert.calledWithExactly(stub, 1, 2, argValue, 4);
 		});
 
 		it("fails if definition contains circular reference", () => {
-			container.findByName("A")!.withArgs(ReferenceArg.one.name("B"));
+			container.findDefinitionByName("A")!.withArgs(ReferenceArg.one.name("B"));
 
-			container.findByName("B")!.withArgs(ReferenceArg.one.name("A"));
+			container.findDefinitionByName("B")!.withArgs(ReferenceArg.one.name("A"));
 
-			return expect(container.get("A")).rejects.toThrowError(
+			return expect(container.resolve("A")).rejects.toThrowError(
 				/Circular dependency found: A \-> B \-> A/
 			);
 		});
 
 		it("fails if definition dependency contains circular reference", () => {
-			container.findByName("A")!.withArgs(ReferenceArg.one.name("B"));
+			container.findDefinitionByName("A")!.withArgs(ReferenceArg.one.name("B"));
 
-			container.findByName("B")!.withArgs(ReferenceArg.one.name("C"));
+			container.findDefinitionByName("B")!.withArgs(ReferenceArg.one.name("C"));
 
 			container.definition("C").useValue("foo").withArgs(ReferenceArg.one.name("B"));
 
-			return expect(container.get("A")).rejects.toThrowError(
+			return expect(container.resolve("A")).rejects.toThrowError(
 				/Circular dependency found: A \-> B \-> C \-> B/
 			);
 		});
 
 		it("fails if service definition with given name does not exist", () => {
-			return expect(container.get("foo")).rejects.toThrowError(
+			return expect(container.resolve("foo")).rejects.toThrowError(
 				/Service "foo" does not exist/
 			);
 		});
@@ -308,7 +308,7 @@ describe("Container", () => {
 		it("fails if definition is incomplete", () => {
 			container.definition("C");
 
-			return expect(container.get("C")).rejects.toThrowError(
+			return expect(container.resolve("C")).rejects.toThrowError(
 				/Missing factory for service definition "C"/
 			);
 		});
@@ -336,10 +336,10 @@ describe("Container", () => {
 
 			container.addMiddleware(middleware1, middleware2);
 
-			expect(await container.get("A")).toEqual(serviceA);
+			expect(await container.resolve("A")).toEqual(serviceA);
 
-			sinon.assert.calledWith(middleware1, container.findByName("A"));
-			sinon.assert.calledWith(middleware2, container.findByName("A"));
+			sinon.assert.calledWith(middleware1, container.findDefinitionByName("A"));
+			sinon.assert.calledWith(middleware2, container.findDefinitionByName("A"));
 
 			sinon.assert.callOrder(middleware1, middleware2);
 		});
@@ -350,7 +350,7 @@ describe("Container", () => {
 
 			container.addMiddleware(middleware);
 
-			const service = container.get("A");
+			const service = container.resolve("A");
 
 			expect(service).toBeInstanceOf(Promise);
 
@@ -366,9 +366,9 @@ describe("Container", () => {
 
 			container.addMiddleware(middleware1, middleware2);
 
-			expect(await container.get("A")).toEqual(result);
+			expect(await container.resolve("A")).toEqual(result);
 
-			sinon.assert.calledWith(middleware1, container.findByName("A"));
+			sinon.assert.calledWith(middleware1, container.findDefinitionByName("A"));
 			sinon.assert.notCalled(middleware2);
 		});
 
@@ -386,9 +386,9 @@ describe("Container", () => {
 
 			container.addMiddleware(middleware1, middleware2);
 
-			expect(await container.get("A")).toEqual(result);
+			expect(await container.resolve("A")).toEqual(result);
 
-			sinon.assert.calledWith(middleware1, container.findByName("A"));
+			sinon.assert.calledWith(middleware1, container.findDefinitionByName("A"));
 			sinon.assert.calledWith(middleware2, definition);
 
 			sinon.assert.callOrder(middleware1, middleware2);
@@ -435,43 +435,43 @@ describe("Container", () => {
 
 		describe("finding by name", () => {
 			it("from parent container", () => {
-				expect(container.findByName("A")).toStrictEqual(definitionA);
+				expect(container.findDefinitionByName("A")).toStrictEqual(definitionA);
 			});
 
 			it("from current container", () => {
-				expect(container.findByName("B")).toStrictEqual(definitionB);
+				expect(container.findDefinitionByName("B")).toStrictEqual(definitionB);
 			});
 
 			it("definition from child container does not exist in parent container", () => {
-				expect(parentContainer.findByName("B")).toBeUndefined();
+				expect(parentContainer.findDefinitionByName("B")).toBeUndefined();
 			});
 		});
 
 		describe("finding by predicate", () => {
 			it("returns all services for true predicate", () => {
-				expect(container.findByPredicate(x => true)).toEqual([definitionB, definitionA]);
+				expect(container.findDefinitionByPredicate(x => true)).toEqual([definitionB, definitionA]);
 			});
 
 			it("returns services that satisfies predicate", () => {
-				expect(container.findByPredicate(s => s.name === "A")).toEqual([definitionA]);
+				expect(container.findDefinitionByPredicate(s => s.name === "A")).toEqual([definitionA]);
 			});
 		});
 
 		describe("finding by annotation predicate", () => {
 			it("returns all services for true predicate", () => {
-				expect(container.findByAnnotation(() => true)).toEqual([definitionB, definitionA]);
+				expect(container.findDefinitionByAnnotation(() => true)).toEqual([definitionB, definitionA]);
 			});
 
 			it("returns services that match predicate", () => {
 				//tslint:disable-next-line: strict-comparisons
-				expect(container.findByAnnotation(a => a === ANNOTATION)).toEqual([definitionA]);
+				expect(container.findDefinitionByAnnotation(a => a === ANNOTATION)).toEqual([definitionA]);
 
 				//tslint:disable-next-line: strict-comparisons
-				expect(container.findByAnnotation(a => a === ANNOTATION2)).toEqual([definitionB]);
+				expect(container.findDefinitionByAnnotation(a => a === ANNOTATION2)).toEqual([definitionB]);
 			});
 
 			it("child containers are ignored when looking in parent container", () => {
-				expect(parentContainer.findByAnnotation(() => true)).toEqual([definitionA]);
+				expect(parentContainer.findDefinitionByAnnotation(() => true)).toEqual([definitionA]);
 			});
 		});
 
@@ -485,9 +485,9 @@ describe("Container", () => {
 				const containerA = new Container(parentContainer);
 				const containerB = new Container(parentContainer);
 
-				expect(await containerA.get("X")).toEqual(serviceX);
+				expect(await containerA.resolve("X")).toEqual(serviceX);
 
-				expect(await containerB.get("X")).toEqual(serviceX);
+				expect(await containerB.resolve("X")).toEqual(serviceX);
 
 				sinon.assert.calledOnce(factory);
 			});
@@ -521,7 +521,7 @@ describe("Container", () => {
 				});
 			});
 
-			await container.get(d);
+			await container.resolve(d);
 			expect(logs[0]).toEqual(expect.stringMatching(/long time to create/));
 		});
 
@@ -536,7 +536,7 @@ describe("Container", () => {
 				});
 			});
 
-			await container.get(d);
+			await container.resolve(d);
 			expect(logs).toHaveLength(0);
 		});
 
@@ -551,7 +551,7 @@ describe("Container", () => {
 				});
 			});
 
-			await container.get(d);
+			await container.resolve(d);
 			expect(logs[0]).toEqual(expect.stringMatching(/long time to create/));
 		});
 	});

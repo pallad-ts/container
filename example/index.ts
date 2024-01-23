@@ -1,11 +1,11 @@
-import {createStandard} from "../src";
+import {createContainer} from "../src";
 import {WorkersManager} from "./workers/WorkersManager";
 import {defineServices, names} from "./container";
 import {createServer} from 'http';
 import {Router} from "./Router";
 
 // create standard container with all middlewares preconfigured for you
-const container = createStandard({
+const container = createContainer({
     config: {
         queue: {
             url: 'amqp://rabbit/vhost',
@@ -24,10 +24,10 @@ defineServices(container);
 
     // let's start workers first! All the workers registration is handled by container
     // you can be sure that all dependencies for WorkersManager have been properly initialized and ready to use
-    const workersManager = await container.get<WorkersManager>('WorkersManager');
+    const workersManager = await container.resolve<WorkersManager>('WorkersManager');
     await workersManager.start();
 
-    const router = await container.get<Router>(names.router);
+    const router = await container.resolve<Router>(names.router);
     createServer(router.listener.bind(router))
         .listen(5000, () => {
             console.log('Server is running!');

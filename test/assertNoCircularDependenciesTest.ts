@@ -8,7 +8,7 @@ let container: Container;
 
 function assertCircularDependencyFound(serviceName: string, dependenciesPath: string[]) {
 	try {
-		assertNoCircularDependencies(container, container.findByName(serviceName)!);
+		assertNoCircularDependencies(container, container.findDefinitionByName(serviceName)!);
 		throw new Error("Circular dependency error expected");
 	} catch (e) {
 		expect(e).toHaveProperty("code", ERRORS.CIRCULAR_DEPENDENCY_DETECTED.code);

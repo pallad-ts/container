@@ -9,9 +9,9 @@ describe("preloadServiceModules", () => {
 			cwd: __dirname,
 		});
 
-		expect(container.findByName("Test1_Service1")).toBeInstanceOf(Definition);
-		expect(container.findByName("Test1_Service2")).toBeInstanceOf(Definition);
-		expect(container.findByName("ExcludedService")).toBeUndefined();
+		expect(container.findDefinitionByName("Test1_Service1")).toBeInstanceOf(Definition);
+		expect(container.findDefinitionByName("Test1_Service2")).toBeInstanceOf(Definition);
+		expect(container.findDefinitionByName("ExcludedService")).toBeUndefined();
 	});
 
 	it("multiple patterns", () => {
@@ -28,8 +28,8 @@ describe("preloadServiceModules", () => {
 			}
 		);
 
-		expect(container.findByName("Test2_Service1")).toBeInstanceOf(Definition);
-		expect(container.findByName("Test2_Service2")).toBeInstanceOf(Definition);
-		expect(container.findByName("ExcludedService")).toBeUndefined();
+		expect(container.findDefinitionByName("Test2_Service1")).toBeInstanceOf(Definition);
+		expect(container.findDefinitionByName("Test2_Service2")).toBeInstanceOf(Definition);
+		expect(container.findDefinitionByName("ExcludedService")).toBeUndefined();
 	});
 });

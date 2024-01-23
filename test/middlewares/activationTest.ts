@@ -20,9 +20,9 @@ describe("activation", () => {
 	it("call on activation hook after service gets created", async () => {
 		const hook = sinon.stub().returnsArg(0);
 
-		container.findByName("A")!.annotate(onActivation(hook));
+		container.findDefinitionByName("A")!.annotate(onActivation(hook));
 
-		const result = await container.get("A");
+		const result = await container.resolve("A");
 
 		expect(result).toStrictEqual(factoryResult);
 
@@ -36,7 +36,7 @@ describe("activation", () => {
 			return factoryResult;
 		});
 
-		const promise = container.get("A");
+		const promise = container.resolve("A");
 
 		expect(promise).toBeInstanceOf(Promise);
 		return expect(promise).resolves.toEqual(factoryResult);
@@ -48,12 +48,12 @@ describe("activation", () => {
 		const hook3 = sinon.stub().returns(3);
 
 		container
-			.findByName("A")!
+			.findDefinitionByName("A")!
 			.annotate(onActivation(hook1))
 			.annotate(onActivation(hook2))
 			.annotate(onActivation(hook3));
 
-		const result = await container.get("A");
+		const result = await container.resolve("A");
 
 		expect(result).toEqual(3);
 

@@ -1,6 +1,5 @@
 import { deprecatedMiddleware, DeprecationMessageFunc } from "./middlewares/deprecated";
 import { Container } from "./Container";
-import { Service } from "./decorators/Service";
 import { activationMiddleware } from "./middlewares/activation";
 import { configMiddleware } from "./middlewares/config";
 import { configProviderForObject } from "./ConfigProvider";
@@ -20,11 +19,6 @@ export interface StandardContainerOptions {
 	 * Parent container
 	 */
 	parent?: Container;
-
-	/**
-	 * Whether to inform @Service decorator to use newly created container
-	 */
-	configureServiceDecorator?: boolean;
 }
 
 /**
@@ -33,14 +27,9 @@ export interface StandardContainerOptions {
  * * @Service decorator uses new container
  * * configMiddleware that uses given config object
  */
-export function createStandard(options: StandardContainerOptions = {}) {
+export function createContainer(options: StandardContainerOptions = {}) {
 	const container = new Container(options.parent);
 	const opts = options || {};
-	const configureServiceDecorator =
-		options.configureServiceDecorator === undefined ? true : options.configureServiceDecorator;
-	if (configureServiceDecorator) {
-		Service.useContainer(container);
-	}
 	container
 		.addMiddleware(activationMiddleware)
 		.addMiddleware(configMiddleware(configProviderForObject(opts.config || {})))

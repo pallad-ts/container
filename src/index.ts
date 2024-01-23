@@ -15,8 +15,6 @@ export * from "./reference";
 export * from "./config";
 export * from "./Lookup";
 export * from "./createAnnotationFactory";
-export * from "./preloadServiceModules";
-export * from "./loadServices";
 export * from "./TypeRef";
 
 export * from "./middlewares/activation";
@@ -24,22 +22,14 @@ export * from "./middlewares/config";
 export * from "./middlewares/deprecated";
 
 export * from "./decorators/OnActivation";
-export * from "./decorators/AutowiredService";
 export * from "./decorators/Config";
 export * from "./decorators/Annotation";
 export * from "./decorators/Inject";
 export * from "./decorators/Deprecated";
-export * from "./decorators/ServiceNoAutoRegister";
-export * from "./createStandard";
+export * from "./createContainer";
 
 export { Service } from "./decorators/Service";
 
 export { createNamespace, namespaceEntry } from "./createNamespace";
 
 export { errors };
-
-export function create(parent?: Container) {
-	return new Container(parent);
-}
-
-export const createContainer = create;

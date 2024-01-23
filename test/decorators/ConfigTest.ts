@@ -1,6 +1,6 @@
 import { Config } from "@src/decorators/Config";
 import { Service } from "@src/decorators/Service";
-import { ensureMetadata } from "@src/serviceMetadata";
+import { ensureMetadataAttachedToClass } from "@src/serviceMetadata";
 import { ConfigRequestArg } from "@src/args/ConfigRequestArg";
 
 describe("Config", () => {
@@ -13,7 +13,7 @@ describe("Config", () => {
 			) {}
 		}
 
-		const metadata = ensureMetadata(Foo);
+		const metadata = ensureMetadataAttachedToClass(Foo);
 		expect(metadata.constructorArguments).toEqual([
 			new ConfigRequestArg("path"),
 			new ConfigRequestArg("path2", "default"),
@@ -30,7 +30,7 @@ describe("Config", () => {
 			property2!: string;
 		}
 
-		const metadata = ensureMetadata(Foo);
+		const metadata = ensureMetadataAttachedToClass(Foo);
 		expect(metadata.propertiesInjectors.get("property")).toEqual(new ConfigRequestArg("path"));
 
 		expect(metadata.propertiesInjectors.get("property2")).toEqual(

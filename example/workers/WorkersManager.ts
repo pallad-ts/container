@@ -8,7 +8,7 @@ import {names} from "../container";
     // once service gets created we can find all workers and register them automatically
     console.log('Looking for registered workers');
     const container: Container = this;
-    const workers = await container.getByAnnotation(a => a === 'worker');
+    const workers = await container.resolveByAnnotation(a => a === 'worker');
     for (const worker of workers) {
         service.registerWorker(worker)
     }

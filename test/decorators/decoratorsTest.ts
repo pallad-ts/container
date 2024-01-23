@@ -147,7 +147,7 @@ describe("decorators", () => {
 			@Service("Test")
 			class Test {}
 
-			expect(container.findByName("Test")).toEqual(getDefinitionForClass(Test));
+			expect(container.findDefinitionByName("Test")).toEqual(getDefinitionForClass(Test));
 		});
 	});
 

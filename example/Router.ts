@@ -7,11 +7,11 @@ import {OnActivation} from "../src/decorators/OnActivation";
 @Service(names.router)
 @OnActivation(async function (router: Router) {
     const container: Container = this;
-    const controllersDefinitions = container.findByAnnotation(a => a && a.annotation === 'controller');
+    const controllersDefinitions = container.findDefinitionByAnnotation(a => a && a.annotation === 'controller');
 
     console.log('Looking for registered controllers...');
     for (const controllerDefinition of controllersDefinitions) {
-        const controller = await container.get(controllerDefinition);
+        const controller = await container.resolve(controllerDefinition);
         const annotation = controllerDefinition.annotations.find(a => a && a.annotation === 'controller');
 
         router.registerController(annotation.path, controller);

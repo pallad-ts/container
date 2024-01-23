@@ -42,7 +42,7 @@ describe("Reference", () => {
 	describe("one", () => {
 		it("by name", async () => {
 			const ref = ReferenceArg.one.name("A");
-			expect(ref.getDependentServices(container)).toEqual(container.findByName("A"));
+			expect(ref.getDependentServices(container)).toEqual(container.findDefinitionByName("A"));
 
 			expect(await ref.getArgument(container)).toEqual(serviceA);
 		});
@@ -57,7 +57,7 @@ describe("Reference", () => {
 		it("by predicate", async () => {
 			const ref = ReferenceArg.one.predicate(d => d.name === "B");
 
-			expect(ref.getDependentServices(container)).toEqual(container.findByName("B"));
+			expect(ref.getDependentServices(container)).toEqual(container.findDefinitionByName("B"));
 
 			expect(await ref.getArgument(container)).toEqual(serviceB);
 		});
@@ -81,7 +81,7 @@ describe("Reference", () => {
 		it("by annotation", async () => {
 			const ref = ReferenceArg.one.annotation(a => a.name === ANNOTATION_NAME);
 
-			expect(ref.getDependentServices(container)).toEqual(container.findByName("A"));
+			expect(ref.getDependentServices(container)).toEqual(container.findDefinitionByName("A"));
 
 			expect(await ref.getArgument(container)).toEqual(serviceA);
 		});
@@ -105,7 +105,7 @@ describe("Reference", () => {
 		it("by type", () => {
 			const ref = ReferenceArg.one.type(TypeRef.createFromType(A)!);
 
-			expect(ref.getDependentServices(container)).toEqual(container.findByName("A"));
+			expect(ref.getDependentServices(container)).toEqual(container.findDefinitionByName("A"));
 		});
 
 		it("by type - ambiguous error", () => {
@@ -121,8 +121,8 @@ describe("Reference", () => {
 			const ref = ReferenceArg.multi.annotation(a => a.name === AMBIGUOUS_ANNOTATION.name);
 
 			expect(ref.getDependentServices(container)).toEqual([
-				container.findByName("A"),
-				container.findByName("B"),
+				container.findDefinitionByName("A"),
+				container.findDefinitionByName("B"),
 			]);
 
 			expect(await ref.getArgument(container)).toEqual([serviceA, serviceB]);
@@ -139,7 +139,7 @@ describe("Reference", () => {
 		it("by predicate", async () => {
 			const ref = ReferenceArg.multi.predicate(d => d.name === "A");
 
-			expect(ref.getDependentServices(container)).toEqual([container.findByName("A")]);
+			expect(ref.getDependentServices(container)).toEqual([container.findDefinitionByName("A")]);
 
 			expect(await ref.getArgument(container)).toEqual([serviceA]);
 		});
@@ -155,8 +155,8 @@ describe("Reference", () => {
 			const ref = ReferenceArg.multi.type(TypeRef.createFromType(B)!);
 
 			expect(ref.getDependentServices(container)).toEqual([
-				container.findByName("B"),
-				container.findByName("D"),
+				container.findDefinitionByName("B"),
+				container.findDefinitionByName("D"),
 			]);
 		});
 	});

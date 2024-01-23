@@ -2,10 +2,10 @@ import { ContainerArg } from "../args/ContainerArg";
 import "reflect-metadata";
 import { ReferenceArg } from "../args/ReferenceArg";
 import * as is from "predicates";
-import { ensureMetadata } from "../serviceMetadata";
 import { ServiceName } from "../types";
 import { TypeRef } from "../TypeRef";
 import { ERRORS } from "../errors";
+import { ensureMetadataAttachedToClass } from "../classServiceMetadata";
 
 const assertServiceNameOrContainerArg = is.assert(
 	is.any(ServiceName.is, ContainerArg.is, TypeRef.is, is.func, is.undefined),
@@ -57,9 +57,14 @@ export function Inject(
 		}
 
 		if (isParameterDecorator) {
-			ensureMetadata(target).constructorArguments[indexOrDescriptor as number] = arg!;
+			ensureMetadataAttachedToClass(target).constructorArguments[
+				indexOrDescriptor as number
+			] = arg!;
 		} else {
-			ensureMetadata(target.constructor).propertiesInjectors.set(property, arg!);
+			ensureMetadataAttachedToClass(target.constructor).propertiesInjectors.set(
+				property,
+				arg!
+			);
 		}
 	};
 }

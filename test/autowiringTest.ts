@@ -36,7 +36,7 @@ describe("autowiring", () => {
 			constructor(readonly foo: Foo) {}
 		}
 
-		const service = await container.get<Example>(NAME);
+		const service = await container.resolve<Example>(NAME);
 
 		expect(service).toBeInstanceOf(Example);
 
@@ -53,7 +53,7 @@ describe("autowiring", () => {
 			foo!: Foo;
 		}
 
-		const service = await container.get<Example>(NAME);
+		const service = await container.resolve<Example>(NAME);
 
 		expect(service.bar).toBeInstanceOf(Bar);
 		expect(service.foo).toBeInstanceOf(Foo);
@@ -63,7 +63,7 @@ describe("autowiring", () => {
 		@AutowiredService(NAME)
 		class Example {}
 
-		const service = await container.get<Example>(NAME);
+		const service = await container.resolve<Example>(NAME);
 		expect(service).toBeInstanceOf(Example);
 	});
 
@@ -74,7 +74,7 @@ describe("autowiring", () => {
 				constructor(@Inject(Bar) readonly foo: Foo) {}
 			}
 
-			const service = await container.get<Example>(NAME);
+			const service = await container.resolve<Example>(NAME);
 
 			expect(service.foo).toBeInstanceOf(Bar);
 		});
@@ -85,7 +85,7 @@ describe("autowiring", () => {
 				constructor(@Inject("bar") readonly foo: Foo) {}
 			}
 
-			const service = await container.get<Example>(NAME);
+			const service = await container.resolve<Example>(NAME);
 			expect(service.foo).toBeInstanceOf(Bar);
 		});
 
@@ -95,7 +95,7 @@ describe("autowiring", () => {
 				constructor(@Inject(Foo) readonly foo: FooInterface) {}
 			}
 
-			const service = await container.get<Example>(NAME);
+			const service = await container.resolve<Example>(NAME);
 			expect(service.foo).toBeInstanceOf(Foo);
 		});
 	});
@@ -138,7 +138,7 @@ describe("autowiring", () => {
 				constructor(readonly foo: Foo) {}
 			}
 
-			return expect(container.get(NAME)).rejects.toThrowErrorMatchingSnapshot();
+			return expect(container.resolve(NAME)).rejects.toThrowErrorMatchingSnapshot();
 		});
 
 		it("explicit referencing reserved type", () => {
