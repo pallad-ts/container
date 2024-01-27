@@ -1,0 +1,61 @@
+{
+  "name": "@pallad/container",
+  "version": "0.0.0",
+  "description": "Asynchronous dependency injection container",
+  "main": "compiled/index.js",
+  "types": "compiled/index.d.ts",
+  "scripts": {
+    "test": "pallad-scripts test",
+    "prepublish": "npm run compile",
+    "compile": "pallad-scripts compile",
+    "lint": "pallad-scripts lint"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wookieb/alpha-dic.git"
+  },
+  "keywords": [
+    "dic",
+    "async",
+    "asynchronous",
+    "tag",
+    "annotations",
+    "annotation",
+    "dependency",
+    "injection",
+    "container"
+  ],
+  "author": "Łukasz Kużyński <lukasz.kuzynski@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wookieb/alpha-dic/issues"
+  },
+  "files": [
+    "compiled",
+    "docs"
+  ],
+  "homepage": "https://github.com/wookieb/alpha-dic#readme",
+  "devDependencies": {
+    "@pallad/errors-dev": "^1.1.0",
+    "@pallad/scripts": "^3",
+    "@types/debug": "^4.1.5",
+    "@types/object-path": "^0.11.0",
+    "@types/sinon": "^17",
+    "prettier": "^3.2.4",
+    "sinon": "^17"
+  },
+  "dependencies": {
+    "@pallad/errors": "^1.0.1",
+    "@pallad/type-check": "^1.2.0",
+    "@types/glob": "^5.0.36",
+    "@types/jest": "^29.5.11",
+    "debug": "^4.2.0",
+    "object-path": "^0.11.4",
+    "predicates": "^2.0.1",
+    "random-string": "^0.2.0",
+    "reflect-metadata": "^0.2"
+  }
+}
