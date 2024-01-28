@@ -12,8 +12,8 @@ export const ERRORS = errorsDomain.addErrorsDescriptorsMap({
 	),
 	AMBIGUOUS_SERVICE: ErrorDescriptor.useMessageFormatter(
 		code(2),
-		(serviceNameList: string[], lookup: Lookup) =>
-			`Multiple services found (${serviceNameList.join(", ")}) with following lookup: ${lookup}`
+		(serviceNameList: string[], lookupOrLookupDescription: Lookup | string) =>
+			`Multiple services found (${serviceNameList.join(", ")}) with following lookup: ${lookupOrLookupDescription}`
 	),
 	NO_MATCHING_SERVICE: ErrorDescriptor.useMessageFormatter(
 		code(3),

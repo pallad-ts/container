@@ -1,9 +1,11 @@
 import * as isPred from "predicates";
 import { ClassConstructor, DefinitionPredicate } from "./types";
 
-const reservedConstructors = new Set<Function>(
+const RESERVED_CONSTRUCTORS = new Set<Function>(
 	["Function", "Object", "Promise"].map(x => (global as any)[x]).filter(x => x)
 );
+
+const RESERVED_PROTOTYPES = new Set([Function.prototype, Object.prototype, Promise.prototype]);
 
 export class TypeReference {
 	constructor(private target: Function) {
@@ -26,8 +28,19 @@ export class TypeReference {
 		return x => x.finalType !== undefined && this.matches(x.finalType);
 	}
 
+	*prototypeChain() {
+		yield this.target;
+		let proto = Object.getPrototypeOf(this.target);
+		do {
+			if (RESERVED_PROTOTYPES.has(proto)) {
+				return;
+			}
+			yield proto;
+		} while ((proto = Object.getPrototypeOf(proto)));
+	}
+
 	static isValidTarget(target: Function) {
-		return !reservedConstructors.has(target);
+		return !RESERVED_CONSTRUCTORS.has(target);
 	}
 
 	static is(value: any): value is TypeReference {

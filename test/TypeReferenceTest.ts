@@ -36,6 +36,19 @@ describe("TypeRef", () => {
 		});
 	});
 
+	describe("getting prototype chain", () => {
+		class A {}
+
+		class B extends A {}
+
+		class C extends B {}
+
+		it("returns prototype chain", () => {
+			const chain = [...TypeReference.createFromClass(C)!.prototypeChain()];
+			expect(chain).toEqual([C, B, A]);
+		});
+	});
+
 	describe("predicate", () => {
 		it("returns false for definitions without type", () => {
 			const definition = new Definition();

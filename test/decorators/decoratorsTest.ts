@@ -187,7 +187,7 @@ describe("decorators", () => {
 				constructor(readonly foo: Foo) {}
 			}
 
-			container.loadDefinitionFromClass(Example);
+			container.definitionFromClass(Example);
 			const service = await container.resolve<Example>(NAME);
 
 			expect(service).toBeInstanceOf(Example);
@@ -205,7 +205,7 @@ describe("decorators", () => {
 				foo!: Foo;
 			}
 
-			container.loadDefinitionFromClass(Example);
+			container.definitionFromClass(Example);
 			const service = await container.resolve<Example>(NAME);
 
 			expect(service.bar).toBeInstanceOf(Bar);
@@ -216,7 +216,7 @@ describe("decorators", () => {
 			@Service(NAME)
 			class Example {}
 
-			container.loadDefinitionFromClass(Example);
+			container.definitionFromClass(Example);
 			const service = await container.resolve<Example>(NAME);
 			expect(service).toBeInstanceOf(Example);
 		});
@@ -228,7 +228,7 @@ describe("decorators", () => {
 					constructor(@Inject(Bar) readonly foo: Foo) {}
 				}
 
-				container.loadDefinitionFromClass(Example);
+				container.definitionFromClass(Example);
 				const service = await container.resolve<Example>(NAME);
 
 				expect(service.foo).toBeInstanceOf(Bar);
@@ -240,7 +240,7 @@ describe("decorators", () => {
 					constructor(@Inject("bar") readonly foo: Foo) {}
 				}
 
-				container.loadDefinitionFromClass(Example);
+				container.definitionFromClass(Example);
 
 				const service = await container.resolve<Example>(NAME);
 				expect(service.foo).toBeInstanceOf(Bar);
@@ -252,7 +252,7 @@ describe("decorators", () => {
 					constructor(@Inject(Foo) readonly foo: FooInterface) {}
 				}
 
-				container.loadDefinitionFromClass(Example);
+				container.definitionFromClass(Example);
 
 				const service = await container.resolve<Example>(NAME);
 				expect(service.foo).toBeInstanceOf(Foo);
@@ -267,7 +267,7 @@ describe("decorators", () => {
 						constructor(readonly foo: FooInterface) {}
 					}
 
-					container.loadDefinitionFromClass(Example);
+					container.definitionFromClass(Example);
 				}).toThrowErrorMatchingSnapshot();
 			});
 
@@ -280,7 +280,7 @@ describe("decorators", () => {
 						constructor(@Inj() readonly arg: any) {}
 					}
 
-					container.loadDefinitionFromClass(Example);
+					container.definitionFromClass(Example);
 				}).toThrowErrorMatchingSnapshot();
 			});
 
@@ -291,7 +291,7 @@ describe("decorators", () => {
 						constructor(readonly arg: Foo | Bar) {}
 					}
 
-					container.loadDefinitionFromClass(Example);
+					container.definitionFromClass(Example);
 				}).toThrowErrorMatchingSnapshot();
 			});
 
@@ -303,7 +303,7 @@ describe("decorators", () => {
 					constructor(readonly foo: Foo) {}
 				}
 
-				container.loadDefinitionFromClass(Example);
+				container.definitionFromClass(Example);
 				return expect(container.resolve(NAME)).rejects.toThrowErrorWithCode(
 					ERRORS.AMBIGUOUS_SERVICE
 				);
@@ -316,7 +316,7 @@ describe("decorators", () => {
 						constructor(@Inject(Object) readonly foo: Foo) {}
 					}
 
-					container.loadDefinitionFromClass(Example);
+					container.definitionFromClass(Example);
 				}).toThrowErrorMatchingSnapshot();
 			});
 		});

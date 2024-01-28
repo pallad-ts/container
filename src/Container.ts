@@ -15,6 +15,7 @@ import { ERRORS } from "./errors";
 import { randomName } from "./utils/randomName";
 import { extractDefinitionFromClass } from "./classServiceMetadata";
 import { ContainerArgument } from "./arguments/ContainerArgument";
+import { TypeReference } from "./TypeReference";
 
 const debugCreation = debugFn("creation");
 const debugDefinition = debugFn("definition");
@@ -67,7 +68,7 @@ export class Container {
 		return definition;
 	}
 
-	loadDefinitionFromClass(clazz: ClassConstructor<any>) {
+	definitionFromClass(clazz: ClassConstructor<any>) {
 		this.registerDefinition(extractDefinitionFromClass(clazz));
 		return this;
 	}
@@ -182,6 +183,11 @@ export class Container {
 		});
 	}
 
+	findDefinitionByClass<T>(type: ClassConstructor<T>): Array<Definition> {
+		const typeReference = new TypeReference(type);
+		return this.findDefinitionByPredicate(typeReference.predicate);
+	}
+
 	/**
 	 * Registers given middleware
 	 */
@@ -291,6 +297,25 @@ export class Container {
 				return [await this.resolve(definition), annotation] as const;
 			})
 		) as Promise<Array<[T, TAnnotation]>>;
+	}
+
+	resolveByClass<T>(type: ClassConstructor<T>): Promise<T> {
+		const definitions = this.findDefinitionByClass<T>(type);
+		if (definitions.length === 0) {
+			return Promise.reject(
+				ERRORS.SERVICE_NOT_FOUND.create(`Service for class "${type.name}" not found`)
+			);
+		}
+
+		if (definitions.length > 1) {
+			return Promise.reject(
+				ERRORS.AMBIGUOUS_SERVICE.create(
+					definitions.map(d => d.name.toString()),
+					`Class "${type.name}"`
+				)
+			);
+		}
+		return this.resolve<T>(definitions[0]);
 	}
 
 	alias(definition: Definition, options?: Definition.AliasOptions) {

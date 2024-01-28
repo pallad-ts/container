@@ -8,6 +8,7 @@ import { ERRORS } from "@src/errors";
 import "@pallad/errors-dev";
 import { ContainerArgument } from "@src/arguments/ContainerArgument";
 import { ReferenceArgument } from "@src/arguments/ReferenceArgument";
+import { Service } from "@src/decorators/Service";
 
 describe("Container", () => {
 	let container: Container;
@@ -252,8 +253,8 @@ describe("Container", () => {
 
 			container.findDefinitionByName("B")!.withArguments(ReferenceArgument.one.name("A"));
 
-			return expect(container.resolve("A")).rejects.toThrowError(
-				/Circular dependency found: A \-> B \-> A/
+			return expect(container.resolve("A")).rejects.toThrowErrorWithCode(
+				ERRORS.CIRCULAR_DEPENDENCY_DETECTED
 			);
 		});
 
@@ -267,23 +268,64 @@ describe("Container", () => {
 				.useValue("foo")
 				.withArguments(ReferenceArgument.one.name("B"));
 
-			return expect(container.resolve("A")).rejects.toThrowError(
-				/Circular dependency found: A \-> B \-> C \-> B/
+			return expect(container.resolve("A")).rejects.toThrowErrorWithCode(
+				ERRORS.CIRCULAR_DEPENDENCY_DETECTED
 			);
 		});
 
 		it("fails if service definition with given name does not exist", () => {
-			return expect(container.resolve("foo")).rejects.toThrowError(
-				/Service "foo" does not exist/
+			return expect(container.resolve("foo")).rejects.toThrowErrorWithCode(
+				ERRORS.SERVICE_NOT_FOUND
 			);
 		});
 
 		it("fails if definition is incomplete", () => {
 			container.definition("C");
 
-			return expect(container.resolve("C")).rejects.toThrowError(
-				/Missing factory for service definition "C"/
+			return expect(container.resolve("C")).rejects.toThrowErrorWithCode(
+				ERRORS.INCOMPLETE_DEFINITION
 			);
+		});
+
+		describe("by type", () => {
+			it("fails if service is not found", () => {
+				@Service()
+				class Foo {}
+
+				return expect(container.resolveByClass(Foo)).rejects.toThrowErrorWithCode(
+					ERRORS.SERVICE_NOT_FOUND
+				);
+			});
+
+			it("fails if more than one service is found", () => {
+				@Service()
+				class Foo {}
+
+				container.definitionFromClass(Foo);
+
+				container.definitionWithConstructor("foo", Foo);
+
+				return expect(container.resolveByClass(Foo)).rejects.toThrowErrorWithCode(
+					ERRORS.AMBIGUOUS_SERVICE
+				);
+			});
+
+			it("success if service is found", async () => {
+				@Service()
+				class Foo {}
+
+				container.definitionFromClass(Foo);
+
+				return expect(container.resolveByClass(Foo)).resolves.toBeInstanceOf(Foo);
+			});
+
+			it("still works even is class is not decorated with @Service", async () => {
+				class Bar {}
+
+				container.definitionWithConstructor(Bar);
+
+				return expect(container.resolveByClass(Bar)).resolves.toBeInstanceOf(Bar);
+			});
 		});
 	});
 
