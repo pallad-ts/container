@@ -24,133 +24,35 @@ describe("Container", () => {
 	beforeEach(() => {
 		container = new Container();
 
-		definitionA = container.definition("A").useValue(serviceA).annotate(ANNOTATION);
+		definitionA = Definition.useValue(serviceA, "A").annotate(ANNOTATION);
 
-		definitionB = container.definition("B").useValue(serviceB).annotate(ANNOTATION2);
+		definitionB = Definition.useValue(serviceB, "B").annotate(ANNOTATION2);
+		container.registerDefinition(definitionA).registerDefinition(definitionB);
 	});
 
 	describe("defining services", () => {
 		const NAME = "someServiceName";
 
 		it("registering definition sets its owner", () => {
-			const def = new Definition(NAME);
+			const def = Definition.useValue("foo", NAME);
 			expect(def.owner).toBeUndefined();
 			container.registerDefinition(def);
 			expect(def.owner).toStrictEqual(container);
 		});
 
 		it("registering definition", () => {
-			const def = new Definition(NAME);
+			const def = Definition.useValue("foo", NAME);
 			container.registerDefinition(def);
 			expect(container.findDefinitionByName(NAME)).toEqual(def);
 		});
 
 		it("register definition with the same name", () => {
-			const def = new Definition(NAME);
+			const def = Definition.useValue("foo", NAME);
 			container.registerDefinition(def);
 
 			expect(() => {
 				container.registerDefinition(def);
 			}).toThrowErrorWithCode(ERRORS.ALREADY_DEFINED);
-		});
-
-		it("creating with registration", () => {
-			const def = container.definition(NAME);
-			expect(container.findDefinitionByName(NAME)).toEqual(def);
-		});
-
-		it("(as constructor) with registration", () => {
-			class Test {
-				public readonly args: any[];
-
-				constructor(...args: any[]) {
-					this.args = args;
-				}
-			}
-
-			const definition = container.definitionWithConstructor(NAME, Test);
-
-			expect(container.findDefinitionByName(NAME)).toEqual(definition);
-			expect(definition.factory(1, 2)).toEqual(new Test(1, 2));
-		});
-
-		it("(as constructor) with registration without name", () => {
-			class Test {
-				public readonly args: any[];
-
-				constructor(...args: any[]) {
-					this.args = args;
-				}
-			}
-
-			const definition = container.definitionWithConstructor(Test);
-			expect(definition.name).toMatch(/^Test.*/);
-
-			expect(definition.factory(1, 2)).toEqual(new Test(1, 2));
-		});
-
-		it("creating (as factory) with registration", () => {
-			const factoryResult = { foo: "bar" };
-			const factory = sinon.stub().returns(factoryResult);
-
-			const definition = container.definitionWithFactory(NAME, factory);
-			expect(container.findDefinitionByName(NAME)).toStrictEqual(definition);
-
-			expect(definition.factory(1, 2, 3)).toEqual(factoryResult);
-
-			sinon.assert.calledWithExactly(factory, 1, 2, 3);
-		});
-
-		it("creating (as factory) with registration without name", () => {
-			class Foo {}
-
-			const factoryResult = new Foo();
-			const factory = sinon.stub().returns(factoryResult);
-
-			const definition = container.definitionWithFactory(factory, Foo);
-			expect(container.findDefinitionByName(definition.name)).toEqual(definition);
-
-			expect(definition.finalType).toEqual(TypeReference.createFromClass(Foo));
-
-			expect(definition.factory(1, 2, 3)).toEqual(factoryResult);
-			sinon.assert.calledWithExactly(factory, 1, 2, 3);
-		});
-
-		it("creating (as value) with registration with global type", () => {
-			const val = { foo: "bar" };
-			const definition = container.definitionWithValue(NAME, val);
-			expect(container.findDefinitionByName(NAME)).toStrictEqual(definition);
-
-			expect(definition.factory()).toStrictEqual(val);
-
-			expect(definition.finalType).toBeUndefined();
-		});
-
-		it("creating (as value) with registration with class type", () => {
-			class Foo {}
-
-			const val = new Foo();
-
-			const definition = container.definitionWithValue(NAME, val);
-			expect(container.findDefinitionByName(NAME)).toStrictEqual(definition);
-
-			expect(definition.factory()).toStrictEqual(val);
-
-			expect(definition.finalType).toEqual(TypeReference.createFromClass(Foo));
-		});
-
-		it("creating (as value) without name", () => {
-			class Foo {}
-
-			const val = new Foo();
-			const definition = container.definitionWithValue(val);
-			expect(container.findDefinitionByName(definition.name)).toStrictEqual(definition);
-
-			expect(definition.name).toMatch(/^Foo.*/);
-
-			expect(definition.factory()).toStrictEqual(val);
-
-			expect(definition.finalType).toEqual(TypeReference.createFromClass(Foo));
 		});
 	});
 
@@ -197,7 +99,8 @@ describe("Container", () => {
 			const result = { foo: "bar" };
 			const stub = sinon.stub().returns(result);
 
-			container.definition("C").useFactory(stub);
+			const definition = Definition.useFactory(stub, "C");
+			container.registerDefinition(definition);
 
 			const p1 = container.resolve("C");
 			const p2 = container.resolve("C");
@@ -216,10 +119,7 @@ describe("Container", () => {
 			const stub = sinon.stub().returns(result);
 			const args = [1, 2, 3, 4];
 
-			container
-				.definition("C")
-				.useFactory(stub)
-				.withArguments(...args);
+			container.registerDefinition(Definition.useFactory(stub, "C").withArguments(...args));
 
 			expect(await container.resolve("C")).toEqual(result);
 
@@ -242,7 +142,9 @@ describe("Container", () => {
 			const result = { foo: "bar" };
 			const stub = sinon.stub().returns(result);
 
-			container.definition("C").useFactory(stub).withArguments(1, 2, arg, 4);
+			container.registerDefinition(
+				Definition.useFactory(stub, "C").withArguments(1, 2, arg, 4)
+			);
 
 			expect(await container.resolve("C")).toEqual(result);
 			sinon.assert.calledWithExactly(stub, 1, 2, argValue, 4);
@@ -263,10 +165,9 @@ describe("Container", () => {
 
 			container.findDefinitionByName("B")!.withArguments(ReferenceArgument.one.name("C"));
 
-			container
-				.definition("C")
-				.useValue("foo")
-				.withArguments(ReferenceArgument.one.name("B"));
+			container.registerDefinition(
+				Definition.useValue("foo", "C").withArguments(ReferenceArgument.one.name("B"))
+			);
 
 			return expect(container.resolve("A")).rejects.toThrowErrorWithCode(
 				ERRORS.CIRCULAR_DEPENDENCY_DETECTED
@@ -276,14 +177,6 @@ describe("Container", () => {
 		it("fails if service definition with given name does not exist", () => {
 			return expect(container.resolve("foo")).rejects.toThrowErrorWithCode(
 				ERRORS.SERVICE_NOT_FOUND
-			);
-		});
-
-		it("fails if definition is incomplete", () => {
-			container.definition("C");
-
-			return expect(container.resolve("C")).rejects.toThrowErrorWithCode(
-				ERRORS.INCOMPLETE_DEFINITION
 			);
 		});
 
@@ -301,9 +194,9 @@ describe("Container", () => {
 				@Service()
 				class Foo {}
 
-				container.definitionFromClass(Foo);
-
-				container.definitionWithConstructor("foo", Foo);
+				container
+					.registerDefinition(Definition.fromClassWithDecorator(Foo))
+					.registerDefinition(Definition.useConstructor(Foo, "foo"));
 
 				return expect(container.resolveByClass(Foo)).rejects.toThrowErrorWithCode(
 					ERRORS.AMBIGUOUS_SERVICE
@@ -314,7 +207,7 @@ describe("Container", () => {
 				@Service()
 				class Foo {}
 
-				container.definitionFromClass(Foo);
+				container.registerDefinition(Definition.fromClassWithDecorator(Foo));
 
 				return expect(container.resolveByClass(Foo)).resolves.toBeInstanceOf(Foo);
 			});
@@ -322,7 +215,7 @@ describe("Container", () => {
 			it("still works even is class is not decorated with @Service", async () => {
 				class Bar {}
 
-				container.definitionWithConstructor(Bar);
+				container.registerDefinition(Definition.useConstructor(Bar));
 
 				return expect(container.resolveByClass(Bar)).resolves.toBeInstanceOf(Bar);
 			});
@@ -389,7 +282,7 @@ describe("Container", () => {
 
 		it("middleware can override definition provided to other middlewares", async () => {
 			const result = { foo: "bar" };
-			const definition = new Definition("C").useValue(result);
+			const definition = Definition.useValue(result, "C");
 
 			const middleware1 = sinon.stub().callsFake((d, next) => {
 				return next(definition);
@@ -418,9 +311,11 @@ describe("Container", () => {
 			parentContainer = new Container();
 			container = new Container(parentContainer);
 
-			definitionA = parentContainer.definition("A").useValue(serviceA).annotate(ANNOTATION);
+			definitionA = Definition.useValue(serviceA, "A").annotate(ANNOTATION);
+			parentContainer.registerDefinition(definitionA);
 
-			definitionB = container.definition("B").useValue(serviceB).annotate(ANNOTATION2);
+			definitionB = Definition.useValue(serviceB, "B").annotate(ANNOTATION2);
+			container.registerDefinition(definitionB);
 		});
 
 		describe("middlewares", () => {
@@ -513,7 +408,7 @@ describe("Container", () => {
 				const serviceX = {};
 				const factory = sinon.stub().returns(serviceX);
 
-				parentContainer.definition("X").useFactory(factory);
+				parentContainer.registerDefinition(Definition.useFactory(factory, "X"));
 
 				const containerA = new Container(parentContainer);
 				const containerB = new Container(parentContainer);
@@ -546,13 +441,14 @@ describe("Container", () => {
 
 		it("success", async () => {
 			container.slowLogThreshold = 100;
-			const d = container.definitionWithFactory(() => {
+			const d = Definition.useFactory(() => {
 				return new Promise(resolve => {
 					setTimeout(() => {
 						resolve(undefined);
 					}, 200);
 				});
 			});
+			container.registerDefinition(d);
 
 			await container.resolve(d);
 			expect(logs[0]).toEqual(expect.stringMatching(/long time to create/));
@@ -561,13 +457,14 @@ describe("Container", () => {
 		it("disabling", async () => {
 			container.slowLogThreshold = 0;
 
-			const d = container.definitionWithFactory(() => {
+			const d = Definition.useFactory(() => {
 				return new Promise(resolve => {
 					setTimeout(() => {
 						resolve(undefined);
 					}, 150);
 				});
 			});
+			container.registerDefinition(d);
 
 			await container.resolve(d);
 			expect(logs).toHaveLength(0);
@@ -576,16 +473,127 @@ describe("Container", () => {
 		it("custom threshold", async () => {
 			container.slowLogThreshold = 500;
 
-			const d = container.definitionWithFactory(() => {
+			const d = Definition.useFactory(() => {
 				return new Promise(resolve => {
 					setTimeout(() => {
 						resolve(undefined);
 					}, 550);
 				});
 			});
+			container.registerDefinition(d);
 
 			await container.resolve(d);
 			expect(logs[0]).toEqual(expect.stringMatching(/long time to create/));
+		});
+	});
+
+	describe("auto definition of related services", () => {
+		it("defining A that is using B also registers B definition", () => {
+			@Service()
+			class B {}
+
+			@Service()
+			class A {
+				constructor(private b: B) {}
+			}
+
+			container.registerDefinition(Definition.fromClassWithDecorator(A));
+
+			const [definition] = container.findDefinitionByClass(B);
+			expect(definition).toBeInstanceOf(Definition);
+			return expect(container.resolveByClass(A)).resolves.toBeInstanceOf(A);
+		});
+
+		it("defining A that is using B but B is already registered", () => {
+			@Service()
+			class B {}
+
+			@Service()
+			class A {
+				constructor(private b: B) {}
+			}
+
+			container
+				.registerDefinition(Definition.fromClassWithDecorator(B))
+				.registerDefinition(Definition.fromClassWithDecorator(A));
+
+			const [definition] = container.findDefinitionByClass(B);
+			expect(definition).toBeInstanceOf(Definition);
+			return expect(container.resolveByClass(A)).resolves.toBeInstanceOf(A);
+		});
+
+		it("defining A that is using B but B is already registered in parent container", () => {
+			const parentContainer = new Container();
+			const container = new Container(parentContainer);
+
+			@Service()
+			class B {}
+
+			@Service()
+			class A {
+				constructor(private b: B) {}
+			}
+
+			parentContainer.registerDefinition(Definition.fromClassWithDecorator(B));
+			container.registerDefinition(Definition.fromClassWithDecorator(A));
+
+			const [definition] = container.findDefinitionByClass(B);
+			expect(definition).toBeInstanceOf(Definition);
+			return expect(container.resolveByClass(A)).resolves.toBeInstanceOf(A);
+		});
+
+		it("4 levels deep", () => {
+			@Service()
+			class A {}
+
+			@Service()
+			class B {
+				constructor(private a: A) {}
+			}
+
+			@Service()
+			class C {
+				constructor(private b: B) {}
+			}
+
+			@Service()
+			class D {
+				constructor(private c: C) {}
+			}
+
+			container.registerDefinition(Definition.fromClassWithDecorator(D));
+
+			return expect(container.resolveByClass(D)).resolves.toBeInstanceOf(D);
+		});
+
+		it("registering many classes with auto efinition should be roughly O(n) complex", () => {
+			const container = new Container();
+			const timeStart = new Date();
+			for (let i = 0; i < 1000; i++) {
+				@Service(`A1${i}`)
+				class A1 {}
+
+				@Service(`A2${i}`)
+				class A2 {
+					constructor(private a: A1) {}
+				}
+
+				@Service(`A3${i}`)
+				class A3 {
+					constructor(private a: A2) {}
+				}
+
+				@Service(`B${i}`)
+				class B {
+					constructor(private a: A3) {}
+				}
+
+				container.registerDefinition(Definition.fromClassWithDecorator(B));
+			}
+			const timeDiff = new Date().getTime() - timeStart.getTime();
+
+			expect(timeDiff).toBeLessThan(100);
+			expect(container.findDefinitionByPredicate(() => true)).toHaveLength(4000);
 		});
 	});
 
@@ -594,13 +602,45 @@ describe("Container", () => {
 			const service = { service: "value" };
 			const container = new Container();
 			const container2 = new Container();
-			const definition = container.definitionWithValue(service);
+			const definition = Definition.useValue(service);
+			container.registerDefinition(definition);
 
 			const newDef = container2.alias(definition);
 
 			expect(newDef).toBeInstanceOf(Definition);
 
 			return expect(container2.resolve(newDef.name)).resolves.toStrictEqual(service);
+		});
+	});
+
+	describe("loading definitions from iterable", () => {
+		it("iterable of definitions", () => {
+			const def1 = Definition.useValue("foo", "A1");
+			const def2 = Definition.useValue("bar", "B1");
+
+			container.loadDefinitionsFromIterable([def1, def2]);
+
+			expect(container.findDefinitionByName("A1")).toStrictEqual(def1);
+			expect(container.findDefinitionByName("B1")).toStrictEqual(def2);
+		});
+
+		it("iterable of classes", () => {
+			@Service('A1')
+			class A {}
+
+			@Service('B1')
+			class B {}
+
+			container.loadDefinitionsFromIterable([A, B]);
+
+			expect(container.findDefinitionByClass(A)).toHaveLength(1);
+			expect(container.findDefinitionByClass(B)).toHaveLength(1);
+		});
+
+		it("fails for invalid values in iterable", () => {
+			expect(() => {
+				container.loadDefinitionsFromIterable([1 as any]);
+			}).toThrowErrorWithCode(ERRORS.INVALID_DEFINITION_OR_CLASS);
 		});
 	});
 });

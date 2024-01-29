@@ -8,6 +8,7 @@ import { Inject } from "@src/decorators/Inject";
 import { config } from "@src/config";
 import { reference } from "@src/reference";
 import { extractDefinitionFromClass } from "@src/classServiceMetadata";
+import { Definition } from "@src/Definition";
 
 describe("integration", () => {
 	const CONFIG = {
@@ -31,7 +32,7 @@ describe("integration", () => {
 		container.addMiddleware(configMiddleware(configProviderFromObject(CONFIG)));
 		container.addMiddleware(activationMiddleware);
 
-		container.definitionWithValue("extraService", extraService);
+		container.registerDefinition(Definition.useValue(extraService, "extraService"));
 	});
 
 	it("service via decorators", async () => {
@@ -59,22 +60,19 @@ describe("integration", () => {
 	});
 
 	it("manually created service", async () => {
-		container
-			.definitionWithFactory(
-				"Foo",
-				(redis: any, extraService: any, requiresAuth: boolean) => {
-					return {
-						redis,
-						extraService,
-						requiresAuth,
-					};
-				}
-			)
-			.withArguments(
+		container.registerDefinition(
+			Definition.useFactory((redis: any, extraService: any, requiresAuth: boolean) => {
+				return {
+					redis,
+					extraService,
+					requiresAuth,
+				};
+			}, "Foo").withArguments(
 				config("redis"),
 				reference("extraService"),
 				config("requiresAuth", false)
-			);
+			)
+		);
 
 		const service = await container.resolve<any>("Foo");
 

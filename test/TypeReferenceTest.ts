@@ -1,7 +1,9 @@
 import { TypeReference } from "@src/TypeReference";
 import { Definition } from "@src/Definition";
+import { ERRORS } from "@src/errors";
+import "@pallad/errors-dev";
 
-describe("TypeRef", () => {
+describe("TypeReference", () => {
 	class Foo {}
 
 	class Bar extends Foo {}
@@ -18,21 +20,15 @@ describe("TypeRef", () => {
 
 	describe("matches", () => {
 		it("satisfied if type is the same", () => {
-			expect(TypeReference.createFromClass(Foo)!.matches(new TypeReference(Foo))).toEqual(
-				true
-			);
+			expect(new TypeReference(Foo)!.matches(new TypeReference(Foo))).toEqual(true);
 		});
 
 		it("satisfied if target is instance of root type", () => {
-			expect(TypeReference.createFromClass(Foo)!.matches(new TypeReference(Bar))).toEqual(
-				true
-			);
+			expect(new TypeReference(Foo)!.matches(new TypeReference(Bar))).toEqual(true);
 		});
 
 		it("not satisfied if type is not related", () => {
-			expect(TypeReference.createFromClass(Foo)!.matches(new TypeReference(Gamma))).toEqual(
-				false
-			);
+			expect(new TypeReference(Foo)!.matches(new TypeReference(Gamma))).toEqual(false);
 		});
 	});
 
@@ -44,27 +40,27 @@ describe("TypeRef", () => {
 		class C extends B {}
 
 		it("returns prototype chain", () => {
-			const chain = [...TypeReference.createFromClass(C)!.prototypeChain()];
+			const chain = [...new TypeReference(C)!.prototypeChain()];
 			expect(chain).toEqual([C, B, A]);
 		});
 	});
 
 	describe("predicate", () => {
 		it("returns false for definitions without type", () => {
-			const definition = new Definition();
-			expect(TypeReference.createFromClass(Foo)!.predicate(definition)).toEqual(false);
+			const definition = Definition.useValue("test");
+			expect(new TypeReference(Foo)!.predicate(definition)).toEqual(false);
 		});
 
 		it("returns true for definition with matching type", () => {
-			const definition = new Definition().setFinalType(Foo);
+			const definition = Definition.useClass(Foo);
 
-			expect(TypeReference.createFromClass(Foo)!.predicate(definition)).toEqual(true);
+			expect(new TypeReference(Foo)!.predicate(definition)).toEqual(true);
 		});
 
 		it("return false for definition without matching type", () => {
-			const definition = new Definition().setFinalType(Gamma);
+			const definition = Definition.useClass(Gamma);
 
-			expect(TypeReference.createFromClass(Foo)!.predicate(definition)).toEqual(false);
+			expect(new TypeReference(Foo)!.predicate(definition)).toEqual(false);
 		});
 	});
 
@@ -81,24 +77,30 @@ describe("TypeRef", () => {
 				expect(() => {
 					// tslint:disable-next-line:no-unused-expression
 					new TypeReference(constructor);
-				}).toThrowErrorMatchingSnapshot();
+				}).toThrowErrorWithCode(ERRORS.INVALID_TYPE_REFERENCE_TARGET);
 			}
 		);
 
 		describe("from value", () => {
-			it.each([[false], [true], ["str"], [undefined]])("ignores non objects: %s", value => {
-				expect(TypeReference.createFromValue(value)).toBeUndefined();
+			it.each([[false], [true], ["str"], [undefined]])("fails for non objects: %s", value => {
+				expect(() => TypeReference.createFromValue(value)).toThrowErrorWithCode(
+					ERRORS.INVALID_TYPE_REFERENCE_VALUE
+				);
 			});
 
-			it("ignores null", () => {
+			it("fails for null", () => {
 				// tslint:disable-next-line:no-null-keyword
-				expect(TypeReference.createFromValue(null)).toBeUndefined();
+				expect(() => {
+					TypeReference.createFromValue(null);
+				}).toThrowErrorWithCode(ERRORS.INVALID_TYPE_REFERENCE_VALUE);
 			});
 
 			it.each([[{}], [Math.min], [Promise.resolve("test")]])(
-				"ignores value that is an instance of reserved type: %s",
+				"fails for values values that are instance of reserved type: %s",
 				value => {
-					expect(TypeReference.createFromValue(value)).toBeUndefined();
+					expect(() => TypeReference.createFromValue(value)).toThrowErrorWithCode(
+						ERRORS.INVALID_TYPE_REFERENCE_TARGET
+					);
 				}
 			);
 
@@ -111,30 +113,6 @@ describe("TypeRef", () => {
 				expect(ref).toEqual(new TypeReference(type));
 
 				expect(String(ref)).toEqual(`instance of class "${type.name}"`);
-			});
-		});
-
-		describe("from type", () => {
-			it.each(RESERVED_TYPES)("returns undefined for reserved types: %s", constructor => {
-				expect(TypeReference.createFromClass(constructor)).toBeUndefined();
-			});
-
-			it.each([[Foo], [Bar], [Array]])("success: %s", constructor => {
-				expect(TypeReference.createFromClass(constructor)).toEqual(
-					new TypeReference(constructor)
-				);
-			});
-		});
-
-		describe("predicate for type", () => {
-			it.each(RESERVED_TYPES)("returns undefined for reserved types: %s", constructor => {
-				expect(TypeReference.predicateForClass(constructor)).toBeUndefined();
-			});
-
-			it("success", () => {
-				const definition = new Definition().setFinalType(Foo);
-
-				expect(TypeReference.predicateForClass(Foo)!(definition)).toEqual(true);
 			});
 		});
 	});

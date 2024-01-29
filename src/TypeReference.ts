@@ -1,5 +1,6 @@
 import * as isPred from "predicates";
 import { ClassConstructor, DefinitionPredicate } from "./types";
+import { ERRORS } from "./errors";
 
 const RESERVED_CONSTRUCTORS = new Set<Function>(
 	["Function", "Object", "Promise"].map(x => (global as any)[x]).filter(x => x)
@@ -8,9 +9,9 @@ const RESERVED_CONSTRUCTORS = new Set<Function>(
 const RESERVED_PROTOTYPES = new Set([Function.prototype, Object.prototype, Promise.prototype]);
 
 export class TypeReference {
-	constructor(private target: Function) {
+	constructor(readonly target: ClassConstructor<any>) {
 		if (!TypeReference.isValidTarget(target)) {
-			throw new Error(`Target ${target} is invalid`);
+			throw ERRORS.INVALID_TYPE_REFERENCE_TARGET.create(target);
 		}
 		Object.freeze(this);
 	}
@@ -47,26 +48,12 @@ export class TypeReference {
 		return value instanceof TypeReference;
 	}
 
-	static createFromClass(type: ClassConstructor<any>): TypeReference | undefined {
-		if (TypeReference.isValidTarget(type)) {
-			return new TypeReference(type);
-		}
-	}
-
 	static createFromValue(value: any) {
 		// eslint-disable-next-line no-null/no-null
 		if (isPred.object(value) && value !== null) {
 			const proto = Object.getPrototypeOf(value);
-			if (TypeReference.isValidTarget(proto.constructor)) {
-				return new TypeReference(proto.constructor);
-			}
+			return new TypeReference(proto.constructor);
 		}
-	}
-
-	static predicateForClass(type: ClassConstructor<any>): DefinitionPredicate | undefined {
-		const ref = TypeReference.createFromClass(type);
-		if (ref) {
-			return ref.predicate;
-		}
+		throw ERRORS.INVALID_TYPE_REFERENCE_VALUE.create(value);
 	}
 }

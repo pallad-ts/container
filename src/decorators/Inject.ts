@@ -69,10 +69,9 @@ export function Inject(
 	};
 }
 
-function createReferenceForType(func: Function, ...args: string[]) {
-	const type = TypeReference.createFromClass(func as ClassConstructor<any>);
-	if (type === undefined) {
-		throw ERRORS.AUTO_WIRING_FAILED.create(args[0]);
+function createReferenceForType(func: ClassConstructor<any>, ...args: string[]) {
+	if (TypeReference.isValidTarget(func)) {
+		return ReferenceArgument.one.type(func);
 	}
-	return ReferenceArgument.one.type(type);
+	throw ERRORS.AUTO_WIRING_FAILED.create(args[0]);
 }

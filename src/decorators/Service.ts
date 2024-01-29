@@ -23,13 +23,14 @@ export const Service = function (name?: ServiceName) {
 				if (metadata.constructorArguments[index]) {
 					continue;
 				}
-				const ref = TypeReference.createFromClass(paramType);
-				if (ref === undefined) {
+				if (TypeReference.isValidTarget(paramType)) {
+					const ref = new TypeReference(paramType);
+					metadata.constructorArguments[index] = ReferenceArgument.one.type(ref);
+				} else {
 					throw ERRORS.AUTO_WIRING_FAILED.create(
 						`constructor (of ${constructor.name}) argument nr: ${index}`
 					);
 				}
-				metadata.constructorArguments[index] = ReferenceArgument.one.type(ref);
 			}
 		} else if (constructor.length > 0) {
 			throw ERRORS.AUTO_WIRING_NO_METADATA.create();

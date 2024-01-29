@@ -16,11 +16,10 @@ describe("createContainer", () => {
 		const activationHook = sinon.stub().resolves(SERVICE);
 		const factory = sinon.stub().resolves(SERVICE);
 
-		const definition = new Definition("foo");
-		definition.useFactory(factory);
-		definition.withArguments(config("some"));
-		definition.annotate(onActivation(activationHook));
-		definition.annotate(deprecated(NOTE));
+		const definition = Definition.useFactory(factory, "foo")
+			.withArguments(config("some"))
+			.annotate(onActivation(activationHook))
+			.annotate(deprecated(NOTE));
 
 		container.registerDefinition(definition);
 

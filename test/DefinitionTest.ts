@@ -4,21 +4,11 @@ import { TypeReference } from "@src/TypeReference";
 import { Container } from "@src/Container";
 import { ERRORS } from "@src/errors";
 import "@pallad/errors-dev";
+import { createContainer } from "@src/createContainer";
 
 describe("Definition", () => {
 	const ARGS = [1, 2, 3];
 	const CONTEXT = { foo: "bar" };
-
-	let definition: Definition;
-
-	beforeEach(() => {
-		definition = new Definition("name");
-	});
-
-	it("via static create", () => {
-		const def = new Definition("name");
-		expect(def.name).toEqual("name");
-	});
 
 	it("using constructor", () => {
 		const spy = sinon.spy();
@@ -29,9 +19,10 @@ describe("Definition", () => {
 			}
 		}
 
-		expect(definition.useConstructor(Test)).toStrictEqual(definition);
+		const definition = Definition.useConstructor(Test);
 
-		expect(definition.finalType).toEqual(TypeReference.createFromClass(Test));
+		expect(definition.name).toMatch(/^Test.+/);
+		expect(definition.finalType).toEqual(new TypeReference(Test));
 
 		const result = definition.factory.apply(CONTEXT, ARGS);
 		expect(result).toBeInstanceOf(Test);
@@ -47,9 +38,10 @@ describe("Definition", () => {
 			}
 		}
 
-		expect(definition.useClass(Test)).toStrictEqual(definition);
-		expect(definition.finalType).toEqual(TypeReference.createFromClass(Test));
+		const definition = Definition.useClass(Test);
+		expect(definition.finalType).toEqual(new TypeReference(Test));
 
+		expect(definition.name).toMatch(/^Test.+/);
 		const result = definition.factory.apply(CONTEXT, ARGS);
 		expect(result).toBeInstanceOf(Test);
 		sinon.assert.calledWithExactly(spy, ...ARGS);
@@ -59,7 +51,7 @@ describe("Definition", () => {
 		const expectedResult = { foo: "bar" };
 		const stub = sinon.stub().returns(expectedResult);
 
-		expect(definition.useFactory(stub)).toStrictEqual(definition);
+		const definition = Definition.useFactory(stub);
 
 		const result = definition.factory.apply(CONTEXT, ARGS);
 		expect(definition.finalType).toBeUndefined();
@@ -75,10 +67,10 @@ describe("Definition", () => {
 		const expectedResult = new Foo();
 		const stub = sinon.stub().returns(expectedResult);
 
-		expect(definition.useFactory(stub, Foo)).toStrictEqual(definition);
+		const definition = Definition.useFactory(stub, { type: Foo });
 
 		const result = definition.factory.apply(CONTEXT, ARGS);
-		expect(definition.finalType).toEqual(TypeReference.createFromClass(Foo));
+		expect(definition.finalType).toEqual(new TypeReference(Foo));
 
 		expect(result).toStrictEqual(expectedResult);
 		sinon.assert.calledOn(stub, CONTEXT);
@@ -88,11 +80,12 @@ describe("Definition", () => {
 	it("using value", () => {
 		const expectedResult = { foo: "bar" };
 
-		expect(definition.useValue(expectedResult)).toStrictEqual(definition);
+		const definition = Definition.useValue(expectedResult);
 		expect(definition.factory.apply(CONTEXT, ARGS)).toStrictEqual(expectedResult);
 	});
 
 	it("setting args", () => {
+		const definition = Definition.useValue("foo", "name");
 		definition.withArguments(...ARGS);
 		expect(definition.arguments).toEqual(ARGS);
 	});
@@ -100,6 +93,7 @@ describe("Definition", () => {
 	it("annotation", () => {
 		const annotation = { name: "test" };
 
+		const definition = Definition.useValue("foo", "name");
 		expect(definition.annotate(annotation)).toStrictEqual(definition);
 		expect(definition.annotations).toEqual([annotation]);
 	});
@@ -108,12 +102,13 @@ describe("Definition", () => {
 		const annotation1 = { name: "test1" };
 		const annotation2 = { name: "test2" };
 
+		const definition = Definition.useValue("foo", "name");
 		expect(definition.annotate(annotation1, annotation2)).toStrictEqual(definition);
 		expect(definition.annotations).toEqual([annotation1, annotation2]);
 	});
 
 	it("locking makes object immutable", () => {
-		const definition = new Definition("name")
+		const definition = Definition.useValue("foo", "name")
 			.annotate("someAnnotation")
 			.withArguments("some", "args");
 
@@ -122,18 +117,6 @@ describe("Definition", () => {
 		expect(Object.isFrozen(definition)).toBe(true);
 		expect(() => {
 			definition.annotate("someAnnotation");
-		}).toThrowErrorWithCode(ERRORS.DEFINITION_IS_LOCKED);
-
-		expect(() => {
-			definition.useValue({});
-		}).toThrowErrorWithCode(ERRORS.DEFINITION_IS_LOCKED);
-
-		expect(() => {
-			definition.useFactory(() => ({}));
-		}).toThrowErrorWithCode(ERRORS.DEFINITION_IS_LOCKED);
-
-		expect(() => {
-			definition.useClass(class Test {});
 		}).toThrowErrorWithCode(ERRORS.DEFINITION_IS_LOCKED);
 
 		expect(() => {
@@ -148,14 +131,14 @@ describe("Definition", () => {
 		});
 
 		it("success", () => {
-			const def = new Definition().useValue("foo");
+			const def = Definition.useValue("foo");
 
 			def.setOwner(container);
 			expect(def.owner).toStrictEqual(container);
 		});
 
 		it("owner cannot be set twice", () => {
-			const def = new Definition().useValue("foo");
+			const def = Definition.useValue("foo");
 
 			def.setOwner(container);
 
@@ -172,9 +155,7 @@ describe("Definition", () => {
 		const annotation = { ann: 1 };
 		const annotation2 = { ann: 2 };
 		beforeEach(() => {
-			definition = new Definition()
-				.useValue({ service: 1 })
-				.annotate(annotation, annotation2);
+			definition = Definition.useValue({ service: 1 }).annotate(annotation, annotation2);
 		});
 
 		describe("treating name", () => {
@@ -231,16 +212,15 @@ describe("Definition", () => {
 				const container = new Container();
 				const container2 = new Container();
 
-				const def = definition.createAlias();
-
-				container.registerDefinition(definition);
-				container2.registerDefinition(def);
-
 				const service = { service: "test" };
 				const stub = sinon.stub().returns(service);
-				definition.useFactory(stub);
+				const definition = Definition.useFactory(stub);
+				const aliasedDefinition = definition.createAlias();
 
-				await expect(container2.resolve(def)).resolves.toStrictEqual(service);
+				container.registerDefinition(definition);
+				container2.registerDefinition(aliasedDefinition);
+
+				await expect(container2.resolve(aliasedDefinition)).resolves.toStrictEqual(service);
 
 				sinon.assert.calledOnce(stub);
 			});
@@ -248,7 +228,7 @@ describe("Definition", () => {
 			it("fails if aliased definition has no container", () => {
 				const container2 = new Container();
 
-				definition = new Definition().useValue("test");
+				definition = Definition.useValue("test");
 
 				const def = definition.createAlias();
 				container2.registerDefinition(def);

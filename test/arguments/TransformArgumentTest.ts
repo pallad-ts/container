@@ -6,7 +6,7 @@ import { ContainerArgument } from "@src/arguments/ContainerArgument";
 
 describe("TransformArgument", () => {
 	const VALUE = "foo";
-	const DEFINITION_1 = new Definition().useValue("val");
+	const DEFINITION_1 = Definition.useValue("val");
 
 	const ARG_WITH_DEPS = new (class extends ContainerArgument<string> {
 		resolve(): Promise<any> {

@@ -1,7 +1,7 @@
 {
   "extends": "@pallad/scripts/dist/tsconfig-node.json",
   "compilerOptions": {
-    "target": "ES2018",
+    "target": "ES2022",
     "rootDir": ".",
     "outDir": "../compiled",
     "experimentalDecorators": true,

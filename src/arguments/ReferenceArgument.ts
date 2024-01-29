@@ -1,4 +1,4 @@
-import { AnnotationPredicate, ServiceName, DefinitionPredicate } from "../types";
+import {AnnotationPredicate, ServiceName, DefinitionPredicate, ClassConstructor} from "../types";
 import { Container } from "../Container";
 import { Definition } from "../Definition";
 import { Lookup } from "../Lookup";
@@ -6,7 +6,7 @@ import { ContainerArgument } from "./ContainerArgument";
 import { TypeReference } from "../TypeReference";
 import { ERRORS } from "../errors";
 
-function toTypeRef(type: TypeReference | Function) {
+function toTypeRef(type: TypeReference | ClassConstructor<any>) {
 	return TypeReference.is(type) ? type : new TypeReference(type);
 }
 
@@ -21,7 +21,7 @@ export class ReferenceArgument extends ContainerArgument<unknown> {
 		annotation<T>(predicate: AnnotationPredicate<T>) {
 			return new ReferenceArgument("one", new Lookup.ByAnnotation(predicate));
 		},
-		type(type: TypeReference | Function) {
+		type(type: TypeReference | ClassConstructor<any>) {
 			return new ReferenceArgument("one", new Lookup.ByType(toTypeRef(type)));
 		},
 	};
@@ -33,14 +33,14 @@ export class ReferenceArgument extends ContainerArgument<unknown> {
 		annotation(predicate: AnnotationPredicate<unknown>) {
 			return new ReferenceArgument("multi", new Lookup.ByAnnotation(predicate));
 		},
-		type(type: TypeReference | Function) {
+		type(type: TypeReference | ClassConstructor<any>) {
 			return new ReferenceArgument("multi", new Lookup.ByType(toTypeRef(type)));
 		},
 	};
 
 	constructor(
-		private readonly type: "one" | "multi",
-		private readonly lookup: Lookup
+		readonly type: "one" | "multi",
+		readonly lookup: Lookup
 	) {
 		super();
 		Object.freeze(this);

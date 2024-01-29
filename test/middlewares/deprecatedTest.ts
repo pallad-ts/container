@@ -19,8 +19,7 @@ describe("deprecated", () => {
 		let next: sinon.SinonSpy;
 
 		beforeEach(() => {
-			definition = new Definition("someServiceName");
-			definition.useValue("some value");
+			definition = Definition.useValue("some value", "someServiceName");
 
 			next = sinon.spy();
 		});

@@ -1,6 +1,7 @@
 {
   "extends": "@pallad/scripts/dist/tsconfig-node.json",
   "compilerOptions": {
+    "target": "ES2022",
     "noEmit": true,
     "baseUrl": "../src",
     "experimentalDecorators": true,

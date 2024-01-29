@@ -6,14 +6,28 @@ import * as is from "predicates";
 import { ERRORS } from "./errors";
 import { randomName } from "./utils/randomName";
 import { TypeCheck } from "@pallad/type-check";
+import { ReferenceArgument } from "./arguments/ReferenceArgument";
+import { Lookup } from "./Lookup";
+import { extractDefinitionFromClass } from "./classServiceMetadata";
 
 const TYPE_CHECK = new TypeCheck<Definition>("@pallad/container/Definition");
+
+function resolveOptions(options: Definition.Options | undefined): Definition.Options.Shape {
+	if (options === undefined) {
+		return {};
+	}
+
+	if (is.string(options) || typeof options === "symbol") {
+		return { name: options };
+	}
+
+	return options;
+}
 
 export class Definition extends TYPE_CHECK.clazz {
 	#arguments: unknown[] = [];
 	#annotations: unknown[] = [];
 	#factory!: ServiceFactory;
-	readonly name: ServiceName;
 	#finalType?: TypeReference;
 	#owner?: Container;
 	#isLocked = false;
@@ -38,44 +52,53 @@ export class Definition extends TYPE_CHECK.clazz {
 		return this.#factory;
 	}
 
-	constructor(name?: ServiceName) {
+	constructor(
+		factory: ServiceFactory,
+		readonly name: ServiceName = randomName(),
+		type?: TypeReference | ClassConstructor<any>
+	) {
 		super();
-		if (name) {
-			this.name = name;
-		} else {
-			this.name = randomName();
-		}
+		this.#factory = factory;
+		this.#finalType = type
+			? TypeReference.is(type)
+				? type
+				: new TypeReference(type)
+			: undefined;
 	}
 
 	/**
-	 * Sets service constructor
+	 * Creates definition that returns specific value as service
 	 */
-	useConstructor(constructor: ClassConstructor<any>): this {
-		this.#assertNotLocked();
-		this.#factory = factories.fromConstructor(constructor);
-		this.#finalType = TypeReference.createFromClass(constructor);
-		return this;
+	static useValue(value: unknown, options?: Definition.Options) {
+		const { name, type } = resolveOptions(options);
+		return new Definition(factories.fromValue(value), name, type);
 	}
 
 	/**
-	 * Alias for {@see useConstructor}
+	 * Creates definition that returns instance of given class as service
 	 */
-	useClass(clazz: { new (...args: any[]): any }) {
-		this.#assertNotLocked();
-		return this.useConstructor(clazz);
+	static useConstructor(constructor: ClassConstructor<any>, name?: ServiceName) {
+		return new Definition(
+			factories.fromConstructor(constructor),
+			name ? name : randomName(constructor.name),
+			new TypeReference(constructor)
+		);
 	}
 
-	/**
-	 * Sets factory used to create an instance of service.
-	 * In case of asynchronous service creation, factory should return a promise.
-	 *
-	 * The factory value is called in context of AlphaDIC.
-	 */
-	useFactory(factory: (...args: any[]) => any | Promise<any>, type?: ClassConstructor<any>) {
-		this.#assertNotLocked();
-		this.#factory = factories.fromFactory(factory);
-		this.#finalType = type && TypeReference.createFromClass(type);
-		return this;
+	static useClass(constructor: ClassConstructor<any>, name?: ServiceName) {
+		return Definition.useConstructor(constructor, name);
+	}
+
+	static useFactory(
+		factory: (...args: any[]) => any | Promise<any>,
+		options?: Definition.Options
+	) {
+		const { name, type } = resolveOptions(options);
+		return new Definition(factories.fromFactory(factory), name, type);
+	}
+
+	static fromClassWithDecorator(clazz: ClassConstructor<any>) {
+		return extractDefinitionFromClass(clazz);
 	}
 
 	setOwner(container: Container): this {
@@ -86,25 +109,6 @@ export class Definition extends TYPE_CHECK.clazz {
 		}
 
 		this.#owner = container;
-		return this;
-	}
-
-	/**
-	 * Sets information about type of final service
-	 */
-	setFinalType(type: TypeReference | ClassConstructor<any>): this {
-		this.#assertNotLocked();
-		this.#finalType = TypeReference.is(type) ? type : TypeReference.createFromClass(type);
-		return this;
-	}
-
-	/**
-	 * Uses provided value as service
-	 */
-	useValue(value: any) {
-		this.#assertNotLocked();
-		this.#factory = factories.fromValue(value);
-		this.#finalType = TypeReference.createFromValue(value);
 		return this;
 	}
 
@@ -145,15 +149,34 @@ export class Definition extends TYPE_CHECK.clazz {
 	}
 
 	/**
+	 * Generates type reference for each argument that is a reference to another service by type
+	 */
+	*typeReferences(): Iterable<TypeReference> {
+		for (const arg of this.#arguments) {
+			if (arg instanceof ReferenceArgument) {
+				if (arg.type === "one" && arg.lookup instanceof Lookup.ByType) {
+					yield arg.lookup.typeReference;
+				}
+			}
+		}
+	}
+
+	/**
 	 * Creates new definition that is an alias for current one
 	 */
 	createAlias(options?: Definition.AliasOptions) {
-		const def = new Definition(options?.name ? options.name : this.name).useFactory(() => {
-			if (!this.owner) {
-				throw ERRORS.DEFINITION_WITHOUT_CONTAINER.create(def.name.toString());
+		const def = Definition.useFactory(
+			() => {
+				if (!this.owner) {
+					throw ERRORS.DEFINITION_WITHOUT_CONTAINER.create(def.name.toString());
+				}
+				return this.owner.resolve(this);
+			},
+			{
+				name: options?.name ? options.name : this.name,
+				type: this.#finalType,
 			}
-			return this.owner.resolve(this);
-		});
+		);
 
 		const annotations = (() => {
 			const withAnnotations = options?.forwardAnnotations ?? false;
@@ -165,9 +188,6 @@ export class Definition extends TYPE_CHECK.clazz {
 
 		if (annotations.length > 0) {
 			def.annotate(...annotations);
-		}
-		if (this.#finalType) {
-			def.setFinalType(this.#finalType);
 		}
 		return def;
 	}
@@ -184,5 +204,14 @@ export namespace Definition {
 		 * Forwards all annotations if true, none if false or the ones that satisfy given predicate
 		 */
 		forwardAnnotations?: boolean | ((annotation: unknown) => boolean);
+	}
+
+	export type Options = ServiceName | {};
+
+	export namespace Options {
+		export interface Shape {
+			name?: ServiceName;
+			type?: TypeReference | ClassConstructor<any>;
+		}
 	}
 }

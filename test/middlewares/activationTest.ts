@@ -1,6 +1,7 @@
 import { Container } from "@src/Container";
 import { activationMiddleware, onActivation } from "@src/middlewares/activation";
 import * as sinon from "sinon";
+import { Definition } from "@src/Definition";
 
 describe("activation", () => {
 	const factoryResult = { foo: "bar" };
@@ -14,7 +15,7 @@ describe("activation", () => {
 		factory = sinon.stub();
 		factory.returns(factoryResult);
 
-		container.definitionWithFactory("A", factory);
+		container.registerDefinition(Definition.useFactory(factory, "A"));
 	});
 
 	it("call on activation hook after service gets created", async () => {

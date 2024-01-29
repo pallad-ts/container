@@ -7,6 +7,7 @@ import { extractDefinitionFromClass } from "@src/classServiceMetadata";
 import { ReferenceArgument } from "@src/arguments/ReferenceArgument";
 import { ERRORS } from "@src/errors";
 import "@pallad/errors-dev";
+import { Definition } from "@src/Definition";
 
 describe("decorators", () => {
 	it("simple service", () => {
@@ -56,7 +57,7 @@ describe("decorators", () => {
 	it("injecting type ref", () => {
 		class Bar {}
 
-		const ref = TypeReference.createFromClass(Bar)!;
+		const ref = new TypeReference(Bar);
 
 		@Service()
 		class Foo {
@@ -177,8 +178,8 @@ describe("decorators", () => {
 
 		beforeEach(() => {
 			container = new Container();
-			container.definitionWithConstructor("foo", Foo);
-			container.definitionWithConstructor("bar", Bar);
+			container.registerDefinition(Definition.useClass(Foo, "foo"));
+			container.registerDefinition(Definition.useClass(Bar, "bar"));
 		});
 
 		it("simple", async () => {
@@ -187,7 +188,7 @@ describe("decorators", () => {
 				constructor(readonly foo: Foo) {}
 			}
 
-			container.definitionFromClass(Example);
+			container.registerDefinition(Definition.fromClassWithDecorator(Example));
 			const service = await container.resolve<Example>(NAME);
 
 			expect(service).toBeInstanceOf(Example);
@@ -205,7 +206,7 @@ describe("decorators", () => {
 				foo!: Foo;
 			}
 
-			container.definitionFromClass(Example);
+			container.registerDefinition(Definition.fromClassWithDecorator(Example));
 			const service = await container.resolve<Example>(NAME);
 
 			expect(service.bar).toBeInstanceOf(Bar);
@@ -216,7 +217,7 @@ describe("decorators", () => {
 			@Service(NAME)
 			class Example {}
 
-			container.definitionFromClass(Example);
+			container.registerDefinition(Definition.fromClassWithDecorator(Example));
 			const service = await container.resolve<Example>(NAME);
 			expect(service).toBeInstanceOf(Example);
 		});
@@ -228,7 +229,7 @@ describe("decorators", () => {
 					constructor(@Inject(Bar) readonly foo: Foo) {}
 				}
 
-				container.definitionFromClass(Example);
+				container.registerDefinition(Definition.fromClassWithDecorator(Example));
 				const service = await container.resolve<Example>(NAME);
 
 				expect(service.foo).toBeInstanceOf(Bar);
@@ -240,7 +241,7 @@ describe("decorators", () => {
 					constructor(@Inject("bar") readonly foo: Foo) {}
 				}
 
-				container.definitionFromClass(Example);
+				container.registerDefinition(Definition.fromClassWithDecorator(Example));
 
 				const service = await container.resolve<Example>(NAME);
 				expect(service.foo).toBeInstanceOf(Bar);
@@ -252,7 +253,7 @@ describe("decorators", () => {
 					constructor(@Inject(Foo) readonly foo: FooInterface) {}
 				}
 
-				container.definitionFromClass(Example);
+				container.registerDefinition(Definition.fromClassWithDecorator(Example));
 
 				const service = await container.resolve<Example>(NAME);
 				expect(service.foo).toBeInstanceOf(Foo);
@@ -267,7 +268,7 @@ describe("decorators", () => {
 						constructor(readonly foo: FooInterface) {}
 					}
 
-					container.definitionFromClass(Example);
+					container.registerDefinition(Definition.fromClassWithDecorator(Example));
 				}).toThrowErrorMatchingSnapshot();
 			});
 
@@ -280,7 +281,7 @@ describe("decorators", () => {
 						constructor(@Inj() readonly arg: any) {}
 					}
 
-					container.definitionFromClass(Example);
+					container.registerDefinition(Definition.fromClassWithDecorator(Example));
 				}).toThrowErrorMatchingSnapshot();
 			});
 
@@ -291,19 +292,19 @@ describe("decorators", () => {
 						constructor(readonly arg: Foo | Bar) {}
 					}
 
-					container.definitionFromClass(Example);
+					container.registerDefinition(Definition.fromClassWithDecorator(Example));
 				}).toThrowErrorMatchingSnapshot();
 			});
 
 			it("multiple instances of same type", () => {
-				container.definitionWithConstructor("another", Foo);
+				container.registerDefinition(Definition.useClass(Foo, "another"));
 
 				@Service(NAME)
 				class Example {
 					constructor(readonly foo: Foo) {}
 				}
 
-				container.definitionFromClass(Example);
+				container.registerDefinition(Definition.fromClassWithDecorator(Example));
 				return expect(container.resolve(NAME)).rejects.toThrowErrorWithCode(
 					ERRORS.AMBIGUOUS_SERVICE
 				);
@@ -316,7 +317,7 @@ describe("decorators", () => {
 						constructor(@Inject(Object) readonly foo: Foo) {}
 					}
 
-					container.definitionFromClass(Example);
+					container.registerDefinition(Definition.fromClassWithDecorator(Example));
 				}).toThrowErrorMatchingSnapshot();
 			});
 		});

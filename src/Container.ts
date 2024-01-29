@@ -3,7 +3,6 @@ import {
 	ServiceName,
 	DefinitionPredicate,
 	Middleware,
-	ServiceFactory,
 	onMiddlewareAttach,
 	ClassConstructor,
 } from "./types";
@@ -12,10 +11,7 @@ import { assertNoCircularDependencies } from "./assertNoCircularDependencies";
 import * as is from "predicates";
 import { debugFn } from "./debugFn";
 import { ERRORS } from "./errors";
-import { randomName } from "./utils/randomName";
-import { extractDefinitionFromClass } from "./classServiceMetadata";
 import { ContainerArgument } from "./arguments/ContainerArgument";
-import { TypeReference } from "./TypeReference";
 
 const debugCreation = debugFn("creation");
 const debugDefinition = debugFn("definition");
@@ -26,6 +22,8 @@ export class Container {
 	#services: Map<Definition, Promise<any>> = new Map();
 	#middlewares: Middleware[] = [];
 
+	#typeIndex = new Map<ClassConstructor<any>, Set<Definition>>();
+
 	public readonly parent?: Container;
 
 	/**
@@ -35,6 +33,10 @@ export class Container {
 
 	get middlewares() {
 		return this.#middlewares.slice();
+	}
+
+	get definitions() {
+		return Array.from(this.#definitions.values());
 	}
 
 	constructor(parent?: Container) {
@@ -54,23 +56,30 @@ export class Container {
 		debugDefinition(`Service ${definition.name.toString()} defined`);
 		definition.setOwner(this);
 		this.#definitions.set(definition.name, definition);
+
+		if (definition.finalType) {
+			for (const type of definition.finalType.prototypeChain()) {
+				this.#registerTypeForDefinition(type, definition);
+			}
+		}
+		for (const typeReference of definition.typeReferences()) {
+			const definitions = this.findDefinitionByClass(typeReference.target);
+
+			if (definitions.length === 0) {
+				this.registerDefinition(Definition.fromClassWithDecorator(typeReference.target));
+			}
+		}
+
 		return this;
 	}
 
-	/**
-	 * Creates and registers service definition
-	 *
-	 * Returns created definition for further configuration
-	 */
-	definition(name?: ServiceName) {
-		const definition = new Definition(name);
-		this.registerDefinition(definition);
-		return definition;
-	}
-
-	definitionFromClass(clazz: ClassConstructor<any>) {
-		this.registerDefinition(extractDefinitionFromClass(clazz));
-		return this;
+	#registerTypeForDefinition(type: ClassConstructor<any>, definition: Definition) {
+		const currentDefinitions = this.#typeIndex.get(type);
+		if (currentDefinitions === undefined) {
+			this.#typeIndex.set(type, new Set([definition]));
+		} else if (!currentDefinitions.has(definition)) {
+			currentDefinitions.add(definition);
+		}
 	}
 
 	/**
@@ -81,64 +90,12 @@ export class Container {
 			if (Definition.isType(definitionOrClass)) {
 				this.registerDefinition(definitionOrClass);
 			} else if (is.func(definitionOrClass)) {
-				this.registerDefinition(extractDefinitionFromClass(definitionOrClass));
+				this.registerDefinition(Definition.fromClassWithDecorator(definitionOrClass));
+			} else {
+				throw ERRORS.INVALID_DEFINITION_OR_CLASS.create(definitionOrClass);
 			}
 		}
 		return this;
-	}
-
-	/**
-	 * Creates and registers service definition with given name, function as constructor
-	 */
-	definitionWithConstructor(name: ServiceName, clazz: ClassConstructor<any>): Definition;
-	definitionWithConstructor(clazz: ClassConstructor<any>): Definition;
-	definitionWithConstructor(
-		nameOrClazz: ServiceName | ClassConstructor<any>,
-		clazz?: ClassConstructor<any>
-	) {
-		const finalClazz = is.func(nameOrClazz) ? nameOrClazz : clazz!;
-		return this.definition(
-			ServiceName.is(nameOrClazz) ? nameOrClazz : randomName(finalClazz.name)
-		).useConstructor(finalClazz);
-	}
-
-	/**
-	 * Creates and registers service definition with given name, function as factory
-	 */
-	definitionWithFactory(name: ServiceName, factory: ServiceFactory, type?: Function): Definition;
-	definitionWithFactory(factory: ServiceFactory, type?: Function): Definition;
-	definitionWithFactory(
-		nameOrFactory: ServiceName | ServiceFactory,
-		factoryOrType: ServiceFactory | { new (...args: any[]): any },
-		type?: { new (...args: any[]): any }
-	): Definition {
-		const name = ServiceName.is(nameOrFactory) ? nameOrFactory : undefined;
-		const factory = is.func(nameOrFactory)
-			? (nameOrFactory as ServiceFactory)
-			: (factoryOrType as ServiceFactory);
-		const finalType = is.func(nameOrFactory)
-			? (factoryOrType as { new (...args: any[]): any })
-			: type;
-
-		const def = this.definition(name).useFactory(factory);
-		if (finalType) {
-			def.setFinalType(finalType);
-		}
-		return def;
-	}
-
-	/**
-	 * Creates and registers service definition with given name and value as a service
-	 */
-	definitionWithValue(name: ServiceName, value: any): Definition;
-	definitionWithValue(value: any): Definition;
-	definitionWithValue(nameOrValue: ServiceName | any, value?: any): Definition {
-		const isNameProvided = value !== undefined && ServiceName.is(nameOrValue);
-		const finalValue = isNameProvided ? value : nameOrValue;
-		const name = isNameProvided
-			? nameOrValue
-			: randomName(Object.getPrototypeOf(finalValue).constructor.name);
-		return this.definition(name).useValue(finalValue);
 	}
 
 	/**
@@ -183,9 +140,12 @@ export class Container {
 		});
 	}
 
-	findDefinitionByClass<T>(type: ClassConstructor<T>): Array<Definition> {
-		const typeReference = new TypeReference(type);
-		return this.findDefinitionByPredicate(typeReference.predicate);
+	findDefinitionByClass<T>(type: ClassConstructor<T>): Definition[] {
+		const result = Array.from(this.#typeIndex.get(type) ?? []);
+		if (this.parent) {
+			return result.concat(this.parent.findDefinitionByClass(type));
+		}
+		return result;
 	}
 
 	/**
@@ -230,14 +190,6 @@ export class Container {
 	}
 
 	private async create(definition: Definition) {
-		if (!definition.factory) {
-			return Promise.reject(
-				ERRORS.INCOMPLETE_DEFINITION.create(
-					`Missing factory for service definition "${definition.name.toString()}". Define it as constructor, factory or value`
-				)
-			);
-		}
-
 		assertNoCircularDependencies(this, definition);
 
 		// valid definition, time to lock it

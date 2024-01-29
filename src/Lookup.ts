@@ -63,17 +63,17 @@ export namespace Lookup {
 	}
 
 	export class ByType extends Lookup {
-		constructor(readonly type: TypeReference) {
+		constructor(readonly typeReference: TypeReference) {
 			super();
 			Object.freeze(this);
 		}
 
 		*find(container: Container) {
-			yield* container.findDefinitionByPredicate(this.type.predicate);
+			yield* container.findDefinitionByClass(this.typeReference.target);
 		}
 
 		toString() {
-			return "by type: " + this.type.toString();
+			return "by type: " + this.typeReference.toString();
 		}
 	}
 }

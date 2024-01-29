@@ -53,15 +53,8 @@ function createDefinitionFromMetadata(
 	constructor: ClassConstructor<any>
 ) {
 	assertValidServiceDefinition(constructor, metadata);
-	const definition = new Definition(metadata.name);
-	const args = metadata.constructorArguments.concat(
-		Array.from(metadata.propertiesInjectors.values())
-	);
-
-	return definition
-		.withArguments(...args)
-		.useFactory((...args: any[]) => {
-			// create service from constructor
+	const definition = Definition.useFactory(
+		(...args: unknown[]) => {
 			const constructorArgs = args.slice(0, metadata.constructorArguments.length);
 			const service = fromConstructor(constructor)(...constructorArgs);
 
@@ -73,9 +66,18 @@ function createDefinitionFromMetadata(
 					args[propertiesInjectionsStartIndex + propertyInjectionIndex++];
 			}
 			return service;
-		})
-		.setFinalType(metadata.clazz)
-		.annotate(...metadata.annotations);
+		},
+		{
+			name: metadata.name,
+			type: constructor,
+		}
+	);
+
+	const args = metadata.constructorArguments.concat(
+		Array.from(metadata.propertiesInjectors.values())
+	);
+
+	return definition.withArguments(...args).annotate(...metadata.annotations);
 }
 
 function assertValidServiceDefinition(constructor: Function, metadata: ClassServiceMetadata) {

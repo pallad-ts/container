@@ -3,6 +3,7 @@ import { TypeReference } from "@src/TypeReference";
 import { ReferenceArgument } from "@src/arguments/ReferenceArgument";
 import { ERRORS } from "@src/errors";
 import "@pallad/errors-dev";
+import { Definition } from "@src/Definition";
 
 describe("ReferenceArgument", () => {
 	let container: Container;
@@ -24,21 +25,19 @@ describe("ReferenceArgument", () => {
 	beforeEach(() => {
 		container = new Container();
 
-		container
-			.definition("A")
-			.useValue(serviceA)
-			.setFinalType(A)
-			.annotate({ name: ANNOTATION_NAME })
-			.annotate(AMBIGUOUS_ANNOTATION);
+		container.registerDefinition(
+			Definition.useValue(serviceA, { name: "A", type: A })
+				.annotate({ name: ANNOTATION_NAME })
+				.annotate(AMBIGUOUS_ANNOTATION)
+		);
 
-		container
-			.definition("B")
-			.useValue(serviceB)
-			.setFinalType(B)
-			.annotate(ANNOTATION)
-			.annotate(AMBIGUOUS_ANNOTATION);
+		container.registerDefinition(
+			Definition.useValue(serviceB, { name: "B", type: B })
+				.annotate(ANNOTATION)
+				.annotate(AMBIGUOUS_ANNOTATION)
+		);
 
-		container.definition("D").useValue(serviceD).setFinalType(D);
+		container.registerDefinition(Definition.useValue(serviceD, { name: "D", type: D }));
 	});
 
 	describe("one", () => {
@@ -115,7 +114,7 @@ describe("ReferenceArgument", () => {
 		});
 
 		it("by type", () => {
-			const ref = ReferenceArgument.one.type(TypeReference.createFromClass(A)!);
+			const ref = ReferenceArgument.one.type(new TypeReference(A));
 
 			expect(Array.from(ref.dependencies(container))).toEqual([
 				container.findDefinitionByName("A"),
@@ -123,7 +122,7 @@ describe("ReferenceArgument", () => {
 		});
 
 		it("by type - ambiguous error", () => {
-			const ref = ReferenceArgument.one.type(TypeReference.createFromClass(B)!);
+			const ref = ReferenceArgument.one.type(new TypeReference(B));
 			expect(() => {
 				Array.from(ref.dependencies(container));
 			}).toThrowErrorWithCode(ERRORS.AMBIGUOUS_SERVICE);
@@ -170,7 +169,7 @@ describe("ReferenceArgument", () => {
 		});
 
 		it("by type", () => {
-			const ref = ReferenceArgument.multi.type(TypeReference.createFromClass(B)!);
+			const ref = ReferenceArgument.multi.type(new TypeReference(B));
 
 			expect(Array.from(ref.dependencies(container))).toEqual([
 				container.findDefinitionByName("B"),
