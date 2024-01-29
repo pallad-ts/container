@@ -31,27 +31,26 @@
   "author": "Łukasz Kużyński <lukasz.kuzynski@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/wookieb/alpha-dic/issues"
+    "url": "https://github.com/pallad-ts/container/issues"
   },
   "files": [
     "compiled",
     "docs"
   ],
-  "homepage": "https://github.com/wookieb/alpha-dic#readme",
+  "homepage": "https://github.com/pallad-ts/container#readme",
   "devDependencies": {
     "@pallad/errors-dev": "^1.1.0",
     "@pallad/scripts": "^3",
     "@types/debug": "^4.1.5",
     "@types/object-path": "^0.11.0",
     "@types/sinon": "^17",
+    "@types/jest": "^29.5.11",
     "prettier": "^3.2.4",
     "sinon": "^17"
   },
   "dependencies": {
     "@pallad/errors": "^1.0.1",
     "@pallad/type-check": "^1.2.0",
-    "@types/glob": "^5.0.36",
-    "@types/jest": "^29.5.11",
     "debug": "^4.2.0",
     "object-path": "^0.11.4",
     "predicates": "^2.0.1",
