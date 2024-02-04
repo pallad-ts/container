@@ -130,8 +130,8 @@ describe("Container", () => {
 			const argValue = { foo: "value" };
 
 			class DummyArg extends ContainerArgument<any> {
-				async resolve(): Promise<any> {
-					return argValue;
+				resolve(): Promise<any> {
+					return Promise.resolve(argValue);
 				}
 
 				*dependencies() {}
@@ -566,7 +566,28 @@ describe("Container", () => {
 			return expect(container.resolveByClass(D)).resolves.toBeInstanceOf(D);
 		});
 
-		it("registering many classes with auto efinition should be roughly O(n) complex", () => {
+		it("defining A and B that are using the same C should register C only once", async () => {
+			@Service()
+			class C {}
+
+			@Service()
+			class A {
+				constructor(private c: C) {}
+			}
+
+			@Service()
+			class B {
+				constructor(private c: C) {}
+			}
+
+			container.registerDefinition(Definition.fromClassWithDecorator(A));
+			container.registerDefinition(Definition.fromClassWithDecorator(B));
+
+			await expect(container.resolveByClass(A)).resolves.toBeInstanceOf(A);
+			await expect(container.resolveByClass(B)).resolves.toBeInstanceOf(B);
+		});
+
+		it("registering many classes with auto definition should be roughly O(n) complex", () => {
 			const container = new Container();
 			const timeStart = new Date();
 			for (let i = 0; i < 1000; i++) {
@@ -625,10 +646,10 @@ describe("Container", () => {
 		});
 
 		it("iterable of classes", () => {
-			@Service('A1')
+			@Service("A1")
 			class A {}
 
-			@Service('B1')
+			@Service("B1")
 			class B {}
 
 			container.loadDefinitionsFromIterable([A, B]);
