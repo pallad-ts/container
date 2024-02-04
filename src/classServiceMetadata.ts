@@ -6,7 +6,6 @@ import { ERRORS } from "./errors";
 require("reflect-metadata");
 
 const METADATA_KEY = Symbol("@pallad/container/ServiceMetadata");
-const DEFINITION_KEY = Symbol("@pallad/container/Definition");
 
 export interface ClassServiceMetadata {
 	name?: ServiceName;
@@ -34,15 +33,9 @@ export function ensureMetadataAttachedToClass(clazz: ClassConstructor<any>): Cla
 }
 
 export function extractDefinitionFromClass<T>(clazz: ClassConstructor<T>) {
-	const definition = Reflect.getMetadata(DEFINITION_KEY, clazz);
-	if (definition) {
-		return definition;
-	}
 	let data: ClassServiceMetadata = Reflect.getMetadata(METADATA_KEY, clazz);
 	if (data) {
-		const definition = createDefinitionFromMetadata(data, clazz);
-		Reflect.defineMetadata(DEFINITION_KEY, definition, clazz);
-		return definition;
+		return createDefinitionFromMetadata(data, clazz);
 	}
 
 	throw ERRORS.CLASS_IS_NOT_A_SERVICE.create(clazz.name);

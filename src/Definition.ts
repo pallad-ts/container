@@ -31,6 +31,7 @@ export class Definition extends TYPE_CHECK.clazz {
 	#finalType?: TypeReference;
 	#owner?: Container;
 	#isLocked = false;
+	#name!: ServiceName;
 
 	get arguments() {
 		return this.#arguments.slice();
@@ -52,12 +53,17 @@ export class Definition extends TYPE_CHECK.clazz {
 		return this.#factory;
 	}
 
+	get name() {
+		return this.#name;
+	}
+
 	constructor(
 		factory: ServiceFactory,
-		readonly name: ServiceName = randomName(),
+		name: ServiceName = randomName(),
 		type?: TypeReference | ClassConstructor<any>
 	) {
 		super();
+		this.#name = name;
 		this.#factory = factory;
 		this.#finalType = type
 			? TypeReference.is(type)
@@ -99,6 +105,25 @@ export class Definition extends TYPE_CHECK.clazz {
 
 	static fromClassWithDecorator(clazz: ClassConstructor<any>) {
 		return extractDefinitionFromClass(clazz);
+	}
+
+	setName(name: ServiceName): this {
+		this.#assertNotLocked();
+		this.#name = name;
+		return this;
+	}
+
+	clone(name?: ServiceName) {
+		const definition = new Definition(this.factory, name ?? this.name, this.finalType);
+
+		if (this.arguments.length > 0) {
+			definition.withArguments(...this.arguments);
+		}
+		if (this.annotations.length > 0) {
+			definition.annotate(...this.annotations);
+		}
+
+		return definition;
 	}
 
 	setOwner(container: Container): this {

@@ -149,6 +149,48 @@ describe("Definition", () => {
 		});
 	});
 
+	it("setting name", () => {
+		const definition = Definition.useValue("foo", "name");
+		definition.setName("newName");
+		expect(definition.name).toBe("newName");
+	});
+
+	describe("cloning", () => {
+		function assertEqualShape(defA: Definition, defB: Definition) {
+			expect(defA.finalType).toEqual(defB.finalType);
+			expect(defA.factory).toEqual(defB.factory);
+			expect(defA.arguments).toEqual(defB.arguments);
+			expect(defA.annotations).toEqual(defB.annotations);
+		}
+
+		it("clones definition and makes it non-locked", () => {
+			const definition = Definition.useValue("foo", "name");
+
+			const clonedDefinition = definition.clone();
+
+			assertEqualShape(definition, clonedDefinition);
+			expect(clonedDefinition.name).toBe(definition.name);
+			expect(clonedDefinition).not.toBe(definition);
+		});
+
+		it("clones definition with new name", () => {
+			const definition = Definition.useValue("foo", "name");
+			const clonedDefinition = definition.clone("newName");
+			assertEqualShape(definition, clonedDefinition);
+			expect(clonedDefinition.name).toBe("newName");
+		});
+
+		it("clones arguments and annotations", () => {
+			const definition = Definition.useValue("foo", "name")
+				.annotate({ ann: 1 }, { ann: 2 })
+				.withArguments(1, 2, 3);
+			const clonedDefinition = definition.clone();
+
+			assertEqualShape(definition, clonedDefinition);
+			expect(clonedDefinition.name).toBe(definition.name);
+		});
+	});
+
 	describe("aliasing", () => {
 		let definition: Definition;
 
