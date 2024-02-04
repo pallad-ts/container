@@ -8,10 +8,6 @@ import { Definition } from "@src/Definition";
 describe("ReferenceArgument", () => {
 	let container: Container;
 
-	const serviceA = { service: "A" };
-	const serviceB = { service: "B" };
-	const serviceD = { service: "D" };
-
 	const ANNOTATION_NAME = "annotationName";
 	const ANNOTATION = { name: "ExtraAnnotation" };
 	const AMBIGUOUS_ANNOTATION = { name: "ambiguous" };
@@ -22,22 +18,24 @@ describe("ReferenceArgument", () => {
 
 	class D extends B {}
 
+	const serviceA = new A();
+	const serviceB = new B();
+	const serviceD = new D();
+
 	beforeEach(() => {
 		container = new Container();
 
 		container.registerDefinition(
-			Definition.useValue(serviceA, { name: "A", type: A })
+			Definition.useValue(serviceA, "A")
 				.annotate({ name: ANNOTATION_NAME })
 				.annotate(AMBIGUOUS_ANNOTATION)
 		);
 
 		container.registerDefinition(
-			Definition.useValue(serviceB, { name: "B", type: B })
-				.annotate(ANNOTATION)
-				.annotate(AMBIGUOUS_ANNOTATION)
+			Definition.useValue(serviceB, "B").annotate(ANNOTATION).annotate(AMBIGUOUS_ANNOTATION)
 		);
 
-		container.registerDefinition(Definition.useValue(serviceD, { name: "D", type: D }));
+		container.registerDefinition(Definition.useValue(serviceD, "D"));
 	});
 
 	describe("one", () => {

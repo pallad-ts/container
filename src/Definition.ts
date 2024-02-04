@@ -75,9 +75,12 @@ export class Definition extends TYPE_CHECK.clazz {
 	/**
 	 * Creates definition that returns specific value as service
 	 */
-	static useValue(value: unknown, options?: Definition.Options) {
-		const { name, type } = resolveOptions(options);
-		return new Definition(factories.fromValue(value), name, type);
+	static useValue(value: unknown, name?: ServiceName) {
+		return new Definition(
+			factories.fromValue(value),
+			name ?? randomName(Object.getPrototypeOf(value).constructor.name),
+			TypeReference.createFromValue(value)
+		);
 	}
 
 	/**

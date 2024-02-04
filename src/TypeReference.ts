@@ -48,12 +48,13 @@ export class TypeReference {
 		return value instanceof TypeReference;
 	}
 
-	static createFromValue(value: any) {
+	static createFromValue(value: any): TypeReference | undefined {
 		// eslint-disable-next-line no-null/no-null
 		if (isPred.object(value) && value !== null) {
 			const proto = Object.getPrototypeOf(value);
-			return new TypeReference(proto.constructor);
+			if (TypeReference.isValidTarget(proto.constructor)) {
+				return new TypeReference(proto.constructor);
+			}
 		}
-		throw ERRORS.INVALID_TYPE_REFERENCE_VALUE.create(value);
 	}
 }

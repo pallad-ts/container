@@ -82,25 +82,18 @@ describe("TypeReference", () => {
 		);
 
 		describe("from value", () => {
-			it.each([[false], [true], ["str"], [undefined]])("fails for non objects: %s", value => {
-				expect(() => TypeReference.createFromValue(value)).toThrowErrorWithCode(
-					ERRORS.INVALID_TYPE_REFERENCE_VALUE
-				);
-			});
-
-			it("fails for null", () => {
-				// tslint:disable-next-line:no-null-keyword
-				expect(() => {
-					TypeReference.createFromValue(null);
-				}).toThrowErrorWithCode(ERRORS.INVALID_TYPE_REFERENCE_VALUE);
-			});
+			// eslint-disable-next-line no-null/no-null
+			it.each([[false], [true], ["str"], [undefined], [null]])(
+				"fails for non objects: %s",
+				value => {
+					expect(TypeReference.createFromValue(value)).toBeUndefined();
+				}
+			);
 
 			it.each([[{}], [Math.min], [Promise.resolve("test")]])(
 				"fails for values values that are instance of reserved type: %s",
 				value => {
-					expect(() => TypeReference.createFromValue(value)).toThrowErrorWithCode(
-						ERRORS.INVALID_TYPE_REFERENCE_TARGET
-					);
+					expect(TypeReference.createFromValue(value)).toBeUndefined();
 				}
 			);
 

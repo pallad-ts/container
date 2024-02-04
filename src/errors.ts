@@ -82,9 +82,4 @@ export const ERRORS = errorsDomain.addErrorsDescriptorsMap({
 		(value: unknown) =>
 			`Invalid type reference "${value}". Expected non-internal class but "${typeof value}" given`
 	),
-	INVALID_TYPE_REFERENCE_VALUE: ErrorDescriptor.useMessageFormatter(
-		code(18),
-		(value: unknown) =>
-			`Invalid type reference "${value}". Expected object but "${typeof value}" given`
-	),
 });
