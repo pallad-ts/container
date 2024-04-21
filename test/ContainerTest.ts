@@ -504,6 +504,22 @@ describe("Container", () => {
 			return expect(container.resolveByClass(A)).resolves.toBeInstanceOf(A);
 		});
 
+		it("skips classes with @Service decorator", () => {
+			class B {}
+
+			@Service()
+			class A {
+				constructor(private b: B) {}
+			}
+
+			container.registerDefinition(Definition.fromClassWithDecorator(A));
+			const definitions = container.findDefinitionByClass(B);
+			expect(definitions).toHaveLength(0);
+			container.registerDefinition(Definition.useClass(B));
+			return expect(container.resolveByClass(A)).resolves.toBeInstanceOf(A);
+		});
+
+		
 		it("defining A that is using B but B is already registered", () => {
 			@Service()
 			class B {}

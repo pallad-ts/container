@@ -33,6 +33,10 @@ export function ensureMetadataAttachedToClass(clazz: ClassConstructor<any>): Cla
 	return data;
 }
 
+export function getClassServiceMetadata(clazz: ClassConstructor<any>): ClassServiceMetadata | undefined {
+	return Reflect.getMetadata(METADATA_KEY, clazz);
+}
+
 export function extractDefinitionFromClass<T>(clazz: ClassConstructor<T>) {
 	const definition = Reflect.getMetadata(DEFINITION_KEY, clazz);
 	if (definition) {
