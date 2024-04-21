@@ -12,7 +12,7 @@ import * as is from "predicates";
 import { debugFn } from "./debugFn";
 import { ERRORS } from "./errors";
 import { ContainerArgument } from "./arguments/ContainerArgument";
-import { getClassServiceMetadata } from "./classServiceMetadata";
+import { extractDefinitionFromClass, getClassServiceMetadata } from "./classServiceMetadata";
 
 const debugCreation = debugFn("creation");
 const debugDefinition = debugFn("definition");
@@ -61,17 +61,6 @@ export class Container {
 		if (definition.finalType) {
 			for (const type of definition.finalType.prototypeChain()) {
 				this.#registerTypeForDefinition(type, definition);
-			}
-		}
-		for (const typeReference of definition.typeReferences()) {
-			const definitions = this.findDefinitionByClass(typeReference.target);
-
-			if (definitions.length === 0) {
-				if (getClassServiceMetadata(typeReference.target)) {
-					this.registerDefinition(
-						Definition.fromClassWithDecorator(typeReference.target)
-					);
-				}
 			}
 		}
 
